@@ -15,7 +15,7 @@ struct Light
 struct LightManager
 {
     LightManager();
-    void init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene);
+    void init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, bool isSanMiguel);
 
     inline const std::vector<Light>& getLights() const { return mLights; }
     inline const Falcor::ref<Falcor::Buffer>& getLightGpuBuffer() const { return mGpuLightBuffer; }
@@ -24,6 +24,9 @@ struct LightManager
     inline const Falcor::ref<Falcor::Buffer>& getLightProbabilitiesGpuBuffer() const { return mGpuLightProbabilityBuffer; }
 
 private:
+    void createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene);
+    void createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene);
+
     std::vector<Light> mLights;
     Falcor::ref<Falcor::Buffer> mGpuLightBuffer;
 

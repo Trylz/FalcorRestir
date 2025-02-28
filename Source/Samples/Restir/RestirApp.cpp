@@ -10,8 +10,13 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 static const float4 kClearColor(0.38f, 0.52f, 0.10f, 1);
 
-static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
-//static const std::string kDefaultScene = "D:/Restir_Falcor/TestScenes/SanMiguel/sanmiguel.pyscene";
+#if 0
+    static const std::string kDefaultScene = "D:/RestirFalcor/TestScenes/SanMiguel/sanmiguel.pyscene";
+    static const bool kIsSanMiguel = true;
+#else
+    static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
+    static const bool kIsSanMiguel = false;
+#endif
 
 RestirApp::RestirApp(const SampleAppConfig& config) : SampleApp(config) {}
 
@@ -112,7 +117,7 @@ void RestirApp::loadScene(const std::filesystem::path& path, const Fbo* pTargetF
     Restir::GBufferSingleton::instance()->init(getDevice(), mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
 
     Restir::LightManagerSingleton::create();
-    Restir::LightManagerSingleton::instance()->init(getDevice(), mpScene);
+    Restir::LightManagerSingleton::instance()->init(getDevice(), mpScene, kIsSanMiguel);
 
     Restir::ReservoirManagerSingleton::create();
     Restir::ReservoirManagerSingleton::instance()->init(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());

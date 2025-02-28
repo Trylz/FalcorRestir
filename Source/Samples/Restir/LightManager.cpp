@@ -10,44 +10,20 @@ float luma(Falcor::float3 v)
 
 LightManager::LightManager() {}
 
-void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene)
+void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, bool isSanMiguel)
 {
     //------------------------------------------------------------------------------------------------------------
     //	Create random lights
     //------------------------------------------------------------------------------------------------------------
-    static const uint32_t nbLights = 2u;
-
-    const Falcor::AABB& aabb = pScene->getSceneBounds();
-
-    const float epsilon = aabb.radius() / 10.0f;
-
-    const Falcor::float3 minPoint = aabb.minPoint + (aabb.maxPoint - aabb.minPoint) * epsilon;
-    const Falcor::float3 maxPoint = aabb.maxPoint + (aabb.minPoint - aabb.maxPoint) * epsilon;
-    const Falcor::float3 extent = maxPoint - minPoint;
-
-    FloatRandomNumberGenerator rng(333);
-
-    for (uint32_t i = 0u; i < nbLights; ++i)
+    if (isSanMiguel)
     {
-        Light light;
-
-        // Init light.
-        light.mRadius = 0.0001f;
-        light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
-
-        // Color
-        light.mColor =
-            Falcor::float3(rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized()) * 50.0f /
-            (float)nbLights;
-
-        // Position
-        const float dx = rng.generateUnsignedNormalized();
-        const float dy = rng.generateUnsignedNormalized();
-        const float dz = rng.generateUnsignedNormalized();
-        light.mWsPosition = minPoint + extent * Falcor::float3(dx, dy, dz);
-
-        mLights.push_back(light);
+        createSanMiguelSceneLights(pScene);
     }
+    else
+    {
+        createArcadeSceneLights(pScene);
+    }
+
     //------------------------------------------------------------------------------------------------------------
     //	Compute light probabilities
     //------------------------------------------------------------------------------------------------------------
@@ -85,6 +61,47 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
         mLightProbabilities.data(),
         false
     );
+}
+
+
+void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene) {
+}
+
+void LightManager::createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene)
+{
+    static const uint32_t nbLights = 2u;
+
+    const Falcor::AABB& aabb = pScene->getSceneBounds();
+
+    const float epsilon = aabb.radius() / 10.0f;
+
+    const Falcor::float3 minPoint = aabb.minPoint + (aabb.maxPoint - aabb.minPoint) * epsilon;
+    const Falcor::float3 maxPoint = aabb.maxPoint + (aabb.minPoint - aabb.maxPoint) * epsilon;
+    const Falcor::float3 extent = maxPoint - minPoint;
+
+    FloatRandomNumberGenerator rng(333);
+
+    for (uint32_t i = 0u; i < nbLights; ++i)
+    {
+        Light light;
+
+        // Init light.
+        light.mRadius = 0.0001f;
+        light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
+
+        // Color
+        light.mColor =
+            Falcor::float3(rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized()) * 50.0f /
+            (float)nbLights;
+
+        // Position
+        const float dx = rng.generateUnsignedNormalized();
+        const float dy = rng.generateUnsignedNormalized();
+        const float dz = rng.generateUnsignedNormalized();
+        light.mWsPosition = minPoint + extent * Falcor::float3(dx, dy, dz);
+
+        mLights.push_back(light);
+    }
 }
 
 } // namespace Restir
