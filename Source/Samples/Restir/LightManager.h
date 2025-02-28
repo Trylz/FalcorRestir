@@ -27,11 +27,7 @@ private:
     void createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene);
     void createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene);
 
-    void spawnRandomSanMiguelLights(
-        const Falcor::float3 controlPoint1,
-        const std::vector<Falcor::float3>& extents,
-        const uint32_t nbightsPerAxis
-    );
+    void spawnRandomSanMiguelLights(const Falcor::float3 controlPoint1, const std::vector<Falcor::float3>& extents);
 
     std::vector<Light> mLights;
     Falcor::ref<Falcor::Buffer> mGpuLightBuffer;
