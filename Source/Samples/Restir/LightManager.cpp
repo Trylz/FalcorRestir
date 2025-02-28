@@ -201,12 +201,15 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
 
 void LightManager::createDragonBuddhaSceneLights(Falcor::ref<Falcor::Scene> pScene)
 {
-    Light light;
-    light.mRadius = 0.0001f;
-    light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
-    light.mColor = Falcor::float3(1.0f, 0.0f, 0.0f) * 10.0f;
-    light.mWsPosition = pScene->getSceneBounds().center();
-    mLights.push_back(light);
+    {
+        Light light;
+        light.mRadius = 0.5f;
+        light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
+        light.mColor = Falcor::float3(1.0f, 0.2f, 0.32f) * 10.0f;
+        light.mWsPosition = pScene->getSceneBounds().center();
+        light.mWsPosition.y += 1.0f;
+        mLights.push_back(light);
+    }
 }
 
 } // namespace Restir
