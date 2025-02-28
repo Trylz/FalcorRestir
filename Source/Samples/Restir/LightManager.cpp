@@ -12,7 +12,7 @@ LightManager::LightManager() {}
 void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, SceneName sceneName)
 {
     //------------------------------------------------------------------------------------------------------------
-    //	Create random lights
+    //	Create lights
     //------------------------------------------------------------------------------------------------------------
     if (sceneName == SceneName::SanMiguel)
     {

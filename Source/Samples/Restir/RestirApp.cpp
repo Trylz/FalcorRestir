@@ -10,15 +10,20 @@
 
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
-#if 1
+// The scene to use
+#define SCENE_NAME 0
+
+#if SCENE_NAME == 0
+    static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
+    static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
+#elif SCENE_NAME == 1
+    static const std::string kDefaultScene = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
+static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
+#else SCENE_NAME == 2
     static const std::string kDefaultScene = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
     static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
-#else
-    static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
-static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #endif
 
-    
 // https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
 std::wstring ExePath()
 {
@@ -27,7 +32,6 @@ std::wstring ExePath()
     std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
     return std::wstring(buffer).substr(0, pos);
 }
-
 
 RestirApp::RestirApp(const SampleAppConfig& config) : SampleApp(config) {}
 
@@ -40,7 +44,7 @@ void RestirApp::onLoad(RenderContext* pRenderContext)
         FALCOR_THROW("Device does not support raytracing!");
     }
 
-    if (kSceneName == Restir::SceneName::SanMiguel)
+    if (kSceneName == Restir::SceneName::SanMiguel || kSceneName == Restir::SceneName::DragonBuddha)
     {
         std::wstring exePath = ExePath();
         std::string str(exePath.begin(), exePath.end());

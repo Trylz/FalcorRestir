@@ -2,10 +2,11 @@
 
 namespace Restir
 {
-enum class SceneName
-{
-    Arcade,
-    SanMiguel
-};
+    enum class SceneName
+    {
+        Arcade,
+        DragonBuddha,
+        SanMiguel
+    };
 
 }
