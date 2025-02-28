@@ -66,6 +66,20 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
 
 void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
 {
+    const Falcor::ref<Falcor::Camera>& camera = pScene->getCamera();
+
+    const uint32_t nbightsPerAxis = 4u;
+    {
+        const Falcor::float3 controlPoint1 = camera->getPosition();
+
+        std::vector<Falcor::float3> extents;
+        extents.push_back(Falcor::float3(17.82f, 7.18f, -4.31f));
+        extents.push_back(Falcor::float3(33.87f, 7.40f, 8.33f));
+
+    }
+
+
+
     Light light;
 
     // Init light.
