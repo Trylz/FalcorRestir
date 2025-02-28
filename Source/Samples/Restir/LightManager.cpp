@@ -171,7 +171,6 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
         spawnRandomSanMiguelLights(controlPoint, extents, rng);
     }
 
-
     {
         const Falcor::float3 controlPoint = Falcor::float3(31.88f, 1.70f, 0.422f);
 
@@ -181,7 +180,24 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
 
         spawnRandomSanMiguelLights(controlPoint, extents, rng);
     }
-}
 
+    {
+        const Falcor::float3 controlPoint = Falcor::float3(29.8295f, 7.587f, 2.3366f);
+
+        std::vector<Falcor::float3> extents;
+        extents.push_back(Falcor::float3(20.0454f, 7.96142f, 2.116f));
+
+        spawnRandomSanMiguelLights(controlPoint, extents, rng);
+    }
+
+    {
+        const Falcor::float3 controlPoint = Falcor::float3(23.5534f, 7.49673f, -0.798f);
+
+        std::vector<Falcor::float3> extents;
+        extents.push_back(Falcor::float3(7.0799f, 8.14723f, -1.304f));
+
+        spawnRandomSanMiguelLights(controlPoint, extents, rng);
+    }
+}
 
 } // namespace Restir
