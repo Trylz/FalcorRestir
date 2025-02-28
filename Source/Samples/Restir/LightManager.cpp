@@ -121,7 +121,7 @@ void LightManager::spawnRandomSanMiguelLights(
 
             light.mColor =
                 Falcor::float3(rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized()) *
-                5000.0f;
+                4000.0f;
             light.mWsPosition = controlPoint + (float)i * delta;
 
             mLights.push_back(light);
