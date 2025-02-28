@@ -17,11 +17,11 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
     static const std::string kScenePath = "Arcade/Arcade.pyscene";
     static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #elif SCENE_NAME == 1
-    static const std::string kScenePath = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
-    static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
-#else SCENE_NAME == 2
     static const std::string kScenePath = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
     static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
+#else SCENE_NAME == 2
+    static const std::string kScenePath = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
+    static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
 #endif
 
 // https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
@@ -120,6 +120,12 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
     float farZ = radius * 10;
     mpCamera->setDepthRange(nearZ, farZ);
     mpCamera->setAspectRatio((float)pTargetFbo->getWidth() / (float)pTargetFbo->getHeight());
+
+    if (kSceneName == Restir::SceneName::DragonBuddha)
+    {
+        mpCamera->setPosition(mpScene->getSceneBounds().maxPoint);
+        mpCamera->setTarget(mpScene->getSceneBounds().center());
+    }
 
     // Create the singletons.
     Restir::GBufferSingleton::create();

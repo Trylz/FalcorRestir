@@ -20,14 +20,13 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
         createArcadeSceneLights(pScene);
     break;
 
-    case SceneName::DragonBuddha:
-        createDragonBuddhaSceneLights(pScene);
-    break;
-
     case SceneName::SanMiguel:
         createSanMiguelSceneLights(pScene);
     break;
 
+    case SceneName::DragonBuddha:
+        createDragonBuddhaSceneLights(pScene);
+    break;
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -203,6 +202,13 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
 
 void LightManager::createDragonBuddhaSceneLights(Falcor::ref<Falcor::Scene> pScene)
 {
+    Light light;
+    light.mRadius = 0.0001f;
+    light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
+    light.mColor = Falcor::float3(1.0f, 0.0f, 0.0f) * 10000.0f;
+    light.mWsPosition = pScene->getSceneBounds().center();
+
+    mLights.push_back(light);
 }
 
 } // namespace Restir

@@ -5,8 +5,7 @@ namespace Restir
     enum class SceneName
     {
         Arcade,
-        DragonBuddha,
-        SanMiguel
+        SanMiguel,
+        DragonBuddha
     };
-
 }
