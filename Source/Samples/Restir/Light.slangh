@@ -1,0 +1,7 @@
+struct RestirLight
+{
+    float3 mWsPosition;
+    float3 mColor;
+    float mRadius;
+    float mfallOff;
+};
