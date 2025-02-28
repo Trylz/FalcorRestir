@@ -20,7 +20,7 @@ StructuredBuffer<RestirReservoir> gPreviousFrameReservoirs;
 Texture2D<float4> gPositionWs;
 
 Texture2D<float4> gCurrentNormalWs;
-RWTexture2D<float4> gPreviousNormalWs;
+Texture2D<float4> gPreviousNormalWs;
 
 Texture2D<float4> gAlbedo;
 Texture2D<float4> gSpecular;
@@ -126,8 +126,8 @@ RestirReservoir combineReservoirs(
     const float3 currN = gCurrentNormalWs[pixel].xyz;
     const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
 
-   // if (length(prevN - currN) > 0.0f)
-       // return;
+    if (length(prevN - currN) > 0.5f)
+        return;
 
     const float3 V = normalize(P - cameraPositionWs);
     const float3 diffuse = gAlbedo[pixel].xyz;
