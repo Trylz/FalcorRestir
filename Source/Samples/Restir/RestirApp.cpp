@@ -14,13 +14,13 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
 #define SCENE_NAME 0
 
 #if SCENE_NAME == 0
-    static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
+    static const std::string kScenePath = "Arcade/Arcade.pyscene";
     static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #elif SCENE_NAME == 1
-    static const std::string kDefaultScene = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
-static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
+    static const std::string kScenePath = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
+    static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
 #else SCENE_NAME == 2
-    static const std::string kDefaultScene = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
+    static const std::string kScenePath = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
     static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
 #endif
 
@@ -48,12 +48,12 @@ void RestirApp::onLoad(RenderContext* pRenderContext)
     {
         std::wstring exePath = ExePath();
         std::string str(exePath.begin(), exePath.end());
-        str += "/" + kDefaultScene;
+        str += "/" + kScenePath;
         loadScene(str, getTargetFbo().get());
     }
     else
     {
-        loadScene(kDefaultScene, getTargetFbo().get());
+        loadScene(kScenePath, getTargetFbo().get());
     }
 }
 
