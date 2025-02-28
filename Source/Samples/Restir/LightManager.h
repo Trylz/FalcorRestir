@@ -24,10 +24,14 @@ struct LightManager
     inline const Falcor::ref<Falcor::Buffer>& getLightProbabilitiesGpuBuffer() const { return mGpuLightProbabilityBuffer; }
 
 private:
-    void createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene);
     void createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene);
+    void createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene);
 
-    void spawnRandomSanMiguelLights(const Falcor::float3 controlPoint1, const std::vector<Falcor::float3>& extents);
+    void spawnRandomSanMiguelLights(
+        const Falcor::float3 controlPoint,
+        const std::vector<Falcor::float3>& extents,
+        FloatRandomNumberGenerator& rng
+    );
 
     std::vector<Light> mLights;
     Falcor::ref<Falcor::Buffer> mGpuLightBuffer;

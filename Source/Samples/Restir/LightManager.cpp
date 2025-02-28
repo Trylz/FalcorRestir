@@ -63,46 +63,6 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
     );
 }
 
-void LightManager::spawnRandomSanMiguelLights(
-    const Falcor::float3 controlPoint1,
-    const std::vector<Falcor::float3>& extents
-)
-{
-    const uint32_t nbightsPerAxis = 4u;
-
-    /*
-        Light light;
-
-    // Init light.
-    light.mRadius = 0.0001f;
-    light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
-
-    // Color
-    light.mColor = Falcor::float3(1.0f, 0.0f, 0.0f) * 5000.0f;
-
-    // Position
-    light.mWsPosition = pScene->getCamera()->getPosition();
-
-    mLights.push_back(light);
-    */
-}
-
-void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
-{
-    const Falcor::ref<Falcor::Camera>& camera = pScene->getCamera();
-
-
-    {
-        const Falcor::float3 controlPoint1 = camera->getPosition();
-
-        std::vector<Falcor::float3> extents;
-        extents.push_back(Falcor::float3(17.82f, 7.18f, -4.31f));
-        extents.push_back(Falcor::float3(33.87f, 7.40f, 8.33f));
-
-        spawnRandomSanMiguelLights(controlPoint1, extents);
-    }
-
-}
 
 void LightManager::createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene)
 {
@@ -140,5 +100,59 @@ void LightManager::createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene)
         mLights.push_back(light);
     }
 }
+
+void LightManager::spawnRandomSanMiguelLights(
+    const Falcor::float3 controlPoint,
+    const std::vector<Falcor::float3>& extents,
+    FloatRandomNumberGenerator& rng
+)
+{
+    const uint32_t nbightsPerAxis = 4;
+
+    for (auto& ext : extents)
+    {
+        const Falcor::float3 vec = ext - controlPoint;
+        const Falcor::float3 delta = vec / (float)nbightsPerAxis;
+        
+        for (uint32_t i = 0u; i <  nbightsPerAxis; ++i)
+        {
+            Light light;
+            light.mRadius = 0.0001f;
+            light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
+
+            light.mColor =
+                Falcor::float3(rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized()) *
+                5000.0f;
+            light.mWsPosition = controlPoint + (float)i * delta;
+
+            mLights.push_back(light);
+        }
+    }
+ 
+    /*
+
+
+
+    */
+}
+
+void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
+{
+    const Falcor::ref<Falcor::Camera>& camera = pScene->getCamera();
+
+    FloatRandomNumberGenerator rng(444);
+
+    {
+        const Falcor::float3 controlPoint1 = camera->getPosition();
+
+        std::vector<Falcor::float3> extents;
+        extents.push_back(Falcor::float3(17.82f, 7.18f, -4.31f));
+        extents.push_back(Falcor::float3(33.87f, 7.40f, 8.33f));
+
+        spawnRandomSanMiguelLights(controlPoint1, extents, rng);
+    }
+
+}
+
 
 } // namespace Restir
