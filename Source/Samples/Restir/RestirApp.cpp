@@ -10,8 +10,6 @@
 
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
-static const float4 kClearColor(0.38f, 0.52f, 0.10f, 1);
-
 #if 1
     static const std::string kDefaultScene = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
     static const bool kIsSanMiguel = true;
@@ -69,8 +67,6 @@ void RestirApp::onResize(uint32_t width, uint32_t height)
 
 void RestirApp::onFrameRender(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo)
 {
-    pRenderContext->clearFbo(pTargetFbo.get(), kClearColor, 1.0f, 0, FboAttachmentType::All);
-
     if (mpScene)
     {
         IScene::UpdateFlags updates = mpScene->update(pRenderContext, getGlobalClock().getTime());
@@ -164,11 +160,11 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
 int runMain(int argc, char** argv)
 {
     SampleAppConfig config;
-    config.windowDesc.title = "HelloDXR";
+    config.windowDesc.title = "HelloRestir";
     config.windowDesc.resizableWindow = true;
 
-    RestirApp helloDXR(config);
-    return helloDXR.run();
+    RestirApp helloRestir(config);
+    return helloRestir.run();
 }
 
 int main(int argc, char** argv)
