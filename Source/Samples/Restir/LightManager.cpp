@@ -14,13 +14,20 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
     //------------------------------------------------------------------------------------------------------------
     //	Create lights
     //------------------------------------------------------------------------------------------------------------
-    if (sceneName == SceneName::SanMiguel)
+    switch (sceneName)
     {
-        createSanMiguelSceneLights(pScene);
-    }
-    else
-    {
+    case SceneName::Arcade:
         createArcadeSceneLights(pScene);
+    break;
+
+    case SceneName::DragonBuddha:
+        createDragonBuddhaSceneLights(pScene);
+    break;
+
+    case SceneName::SanMiguel:
+        createSanMiguelSceneLights(pScene);
+    break;
+
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -192,6 +199,10 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
 
         spawnRandomSanMiguelLights(controlPoint, extents, rng);
     }
+}
+
+void LightManager::createDragonBuddhaSceneLights(Falcor::ref<Falcor::Scene> pScene)
+{
 }
 
 } // namespace Restir
