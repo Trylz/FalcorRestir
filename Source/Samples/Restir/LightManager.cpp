@@ -171,6 +171,16 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
         spawnRandomSanMiguelLights(controlPoint, extents, rng);
     }
 
+
+    {
+        const Falcor::float3 controlPoint = Falcor::float3(31.88f, 1.70f, 0.422f);
+
+        std::vector<Falcor::float3> extents;
+        extents.push_back(Falcor::float3(23.94f, 2.455f, 6.061f));
+        extents.push_back(Falcor::float3(24.2696f, 2.105f, 0.277f));
+
+        spawnRandomSanMiguelLights(controlPoint, extents, rng);
+    }
 }
 
 
