@@ -10,8 +10,8 @@
 
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
-// The scene to use
-#define SCENE_NAME 1
+// THE SCENE WE USE.
+#define SCENE_NAME 0
 
 #if SCENE_NAME == 0
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
