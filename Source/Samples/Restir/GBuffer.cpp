@@ -23,10 +23,11 @@ void GBuffer::createTextures()
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
-    mCurrentNormalWsTexture = mpDevice->createTexture2D(
+    mNormalWsTextureBuffer1 = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
-    mPreviousNormalWsTexture = mpDevice->createTexture2D(
+
+    mNormalWsTextureBuffer2 = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
@@ -41,6 +42,9 @@ void GBuffer::createTextures()
     mMotionVectorTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
+
+    mCurrentNormalWsTexture = &mNormalWsTextureBuffer1;
+    mPreviousNormalWsTexture = &mNormalWsTextureBuffer2;
 }
 
 void GBuffer::compilePrograms()
