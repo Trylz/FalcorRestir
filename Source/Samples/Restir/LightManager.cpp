@@ -127,12 +127,6 @@ void LightManager::spawnRandomSanMiguelLights(
             mLights.push_back(light);
         }
     }
- 
-    /*
-
-
-
-    */
 }
 
 void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
