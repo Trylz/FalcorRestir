@@ -11,7 +11,7 @@
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 // THE SCENE WE USE.
-#define SCENE_NAME 0
+#define SCENE_NAME 2
 
 #if SCENE_NAME == 0
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
@@ -118,12 +118,6 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
     float farZ = radius * 10;
     mpCamera->setDepthRange(nearZ, farZ);
     mpCamera->setAspectRatio((float)pTargetFbo->getWidth() / (float)pTargetFbo->getHeight());
-
-    if (kSceneName == Restir::SceneName::DragonBuddha)
-    {
-        mpCamera->setPosition(mpScene->getSceneBounds().maxPoint);
-        mpCamera->setTarget(mpScene->getSceneBounds().center());
-    }
 
     // Create the singletons.
     Restir::GBufferSingleton::create();

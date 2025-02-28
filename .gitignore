@@ -3,7 +3,7 @@
 
 # San Miguel scene
 TestScenes/SanMiguel/low-poly.fbx
-
+TestScenes/DragonBuddha/dragonbuddha.obj
 
 # Test output folder.
 /tests/data/

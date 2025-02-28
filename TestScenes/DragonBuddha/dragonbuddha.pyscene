@@ -1,10 +1,10 @@
 # Load FBX
-sceneBuilder.importScene('dragonbuddha.fbx')
+sceneBuilder.importScene('dragonbuddha.obj')
 
 # Add camera
 camera = Camera()
-camera.position = float3(3871.61, 1318.37, -799.806)
-camera.target = float3(3870.67, 1318.06, -799.629)
+camera.position = float3(1.03032, 2.6187, 6.80429)
+camera.target = float3(0.952007, 2.30637, 5.85755)
 camera.up = float3(0.0, 1.0, 0.0)
 camera.focalLength = 35.0
 sceneBuilder.addCamera(camera)

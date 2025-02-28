@@ -18,15 +18,15 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
     {
     case SceneName::Arcade:
         createArcadeSceneLights(pScene);
-    break;
+        break;
 
     case SceneName::SanMiguel:
         createSanMiguelSceneLights(pScene);
-    break;
+        break;
 
     case SceneName::DragonBuddha:
         createDragonBuddhaSceneLights(pScene);
-    break;
+        break;
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -67,7 +67,6 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
         false
     );
 }
-
 
 void LightManager::createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene)
 {
@@ -118,8 +117,8 @@ void LightManager::spawnRandomSanMiguelLights(
     {
         const Falcor::float3 vec = ext - controlPoint;
         const Falcor::float3 delta = vec / (float)nbightsPerAxis;
-        
-        for (uint32_t i = 0u; i <  nbightsPerAxis; ++i)
+
+        for (uint32_t i = 0u; i < nbightsPerAxis; ++i)
         {
             Light light;
             light.mRadius = 0.0001f;
@@ -205,9 +204,8 @@ void LightManager::createDragonBuddhaSceneLights(Falcor::ref<Falcor::Scene> pSce
     Light light;
     light.mRadius = 0.0001f;
     light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
-    light.mColor = Falcor::float3(1.0f, 0.0f, 0.0f) * 10000.0f;
+    light.mColor = Falcor::float3(1.0f, 0.0f, 0.0f) * 10.0f;
     light.mWsPosition = pScene->getSceneBounds().center();
-
     mLights.push_back(light);
 }
 
