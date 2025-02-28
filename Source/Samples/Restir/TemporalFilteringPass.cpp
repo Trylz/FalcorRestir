@@ -28,7 +28,8 @@ void TemporalFilteringPass::render(Falcor::RenderContext* pRenderContext, ref<Ca
     var["gPreviousFrameReservoirs"] = ReservoirManagerSingleton::instance()->getPreviousFrameReservoirBuffer();
 
     var["gPositionWs"] = GBufferSingleton::instance()->getPositionWsTexture();
-    var["gNormalWs"] = GBufferSingleton::instance()->getNormalWsTexture();
+    var["gCurrentNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
+    var["gPreviousNormalWs"] = GBufferSingleton::instance()->getPreviousNormalWsTexture();
     var["gAlbedo"] = GBufferSingleton::instance()->getAlbedoTexture();
     var["gSpecular"] = GBufferSingleton::instance()->getSpecularTexture();
 

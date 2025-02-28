@@ -30,7 +30,7 @@ void ShadingPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCam
     var["gReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
 
     var["gPositionWs"] = GBufferSingleton::instance()->getPositionWsTexture();
-    var["gNormalWs"] = GBufferSingleton::instance()->getNormalWsTexture();
+    var["gNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
     var["gAlbedo"] = GBufferSingleton::instance()->getAlbedoTexture();
     var["gSpecular"] = GBufferSingleton::instance()->getSpecularTexture();
 

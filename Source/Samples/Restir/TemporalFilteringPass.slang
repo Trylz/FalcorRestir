@@ -18,7 +18,10 @@ RWStructuredBuffer<RestirReservoir> gCurrentFrameReservoirs;
 StructuredBuffer<RestirReservoir> gPreviousFrameReservoirs;
 
 Texture2D<float4> gPositionWs;
-Texture2D<float4> gNormalWs;
+
+Texture2D<float4> gCurrentNormalWs;
+Texture2D<float4> gPreviousNormalWs;
+
 Texture2D<float4> gAlbedo;
 Texture2D<float4> gSpecular;
 
@@ -120,7 +123,13 @@ RestirReservoir combineReservoirs(
     if (gPositionWs[previousPixelPos].w == 0.0f)
         return;
 
-    const float3 N = gNormalWs[pixel].xyz;
+    const float3 N = gCurrentNormalWs[pixel].xyz;
+
+
+
+
+
+
     const float3 V = normalize(P - cameraPositionWs);
     const float3 diffuse = gAlbedo[pixel].xyz;
     const float3 specular = gSpecular[pixel].xyz;

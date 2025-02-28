@@ -11,17 +11,17 @@
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 // The scene to use
-#define SCENE_NAME 0
+#define SCENE_NAME 1
 
 #if SCENE_NAME == 0
-    static const std::string kScenePath = "Arcade/Arcade.pyscene";
-    static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
+static const std::string kScenePath = "Arcade/Arcade.pyscene";
+static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #elif SCENE_NAME == 1
-    static const std::string kScenePath = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
-    static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
+static const std::string kScenePath = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
+static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
 #else SCENE_NAME == 2
-    static const std::string kScenePath = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
-    static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
+static const std::string kScenePath = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
+static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
 #endif
 
 // https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
@@ -85,9 +85,7 @@ void RestirApp::onFrameRender(RenderContext* pRenderContext, const ref<Fbo>& pTa
     getTextRenderer().render(pRenderContext, getFrameRate().getMsg(), pTargetFbo, {20, 20});
 }
 
-void RestirApp::onGuiRender(Gui* pGui)
-{
-}
+void RestirApp::onGuiRender(Gui* pGui) {}
 
 bool RestirApp::onKeyEvent(const KeyboardEvent& keyEvent)
 {
@@ -164,6 +162,7 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
 
     pRenderContext->blit(mpShadingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
 
+    Restir::GBufferSingleton::instance()->setNextFrame();
     Restir::ReservoirManagerSingleton::instance()->setNextFrame();
 }
 

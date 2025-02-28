@@ -4,9 +4,7 @@ namespace Restir
 {
 using namespace Falcor;
 
-GBuffer::GBuffer()
-{
-}
+GBuffer::GBuffer() {}
 
 void GBuffer::init(ref<Device> pDevice, ref<Scene> pScene, uint32_t width, uint32_t height)
 {
@@ -19,15 +17,16 @@ void GBuffer::init(ref<Device> pDevice, ref<Scene> pScene, uint32_t width, uint3
     compilePrograms();
 }
 
-
 void GBuffer::createTextures()
 {
-    // Create gbuffer textures.
     mPositionWsTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
-    mNormalWsTexture = mpDevice->createTexture2D(
+    mNormalWsTextureBuffer1 = mpDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+    );
+    mNormalWsTextureBuffer2 = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
@@ -42,6 +41,9 @@ void GBuffer::createTextures()
     mMotionVectorTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
+
+    mCurrentNormalWsTexture = &mNormalWsTextureBuffer1;
+    mPreviousNormalWsTexture = &mNormalWsTextureBuffer2;
 }
 
 void GBuffer::compilePrograms()
@@ -78,7 +80,7 @@ void GBuffer::render(RenderContext* pRenderContext)
     var["PerFrameCB"]["sampleIndex"] = mSampleIndex++;
 
     var["gPositionWs"] = mPositionWsTexture;
-    var["gNormalWs"] = mNormalWsTexture;
+    var["gNormalWs"] = mCurrentNormalWsTexture;
     var["gAlbedo"] = mAlbedoTexture;
     var["gSpecular"] = mSpecularTexture;
     var["gMotionVector"] = mMotionVectorTexture;
