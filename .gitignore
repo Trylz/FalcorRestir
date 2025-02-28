@@ -1,6 +1,10 @@
 # Build folder.
 /build/
 
+# San Miguel scene
+TestScenes/SanMiguel/low-poly.fbx
+
+
 # Test output folder.
 /tests/data/
 
