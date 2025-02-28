@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Singleton.h"
+#include "FloatRandomNumberGenerator.h"
 
 namespace Restir
 {

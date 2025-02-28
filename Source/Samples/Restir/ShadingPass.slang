@@ -45,7 +45,7 @@ void ShadingPass(uint3 threadId: SV_DispatchThreadID)
 
     if (gPositionWs[pixel].w == 0.0f)
     {
-       gOutput[pixel] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+       gOutput[pixel] = float4(1.0f, 1.0f,1.0f, 0.0f);
        return;
     }
 

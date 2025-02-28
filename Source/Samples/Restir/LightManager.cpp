@@ -1,5 +1,4 @@
 #include "LightManager.h"
-#include "FloatRandomNumberGenerator.h"
 
 namespace Restir
 {
@@ -143,13 +142,24 @@ void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
     FloatRandomNumberGenerator rng(444);
 
     {
-        const Falcor::float3 controlPoint1 = camera->getPosition();
+        const Falcor::float3 controlPoint = camera->getPosition();
 
         std::vector<Falcor::float3> extents;
         extents.push_back(Falcor::float3(17.82f, 7.18f, -4.31f));
         extents.push_back(Falcor::float3(33.87f, 7.40f, 8.33f));
 
-        spawnRandomSanMiguelLights(controlPoint1, extents, rng);
+        spawnRandomSanMiguelLights(controlPoint, extents, rng);
+    }
+
+    {
+        const Falcor::float3 controlPoint = Falcor::float3(34.8199f, 2.59f, -4.46f);
+
+        std::vector<Falcor::float3> extents;
+        extents.push_back(Falcor::float3(33.56f, 5.13f, 7.84141f));
+        extents.push_back(Falcor::float3(18.1943f, 2.54f, -4.58f));
+        extents.push_back(Falcor::float3(16.9297f, 2.932f, 7.918f));
+
+        spawnRandomSanMiguelLights(controlPoint, extents, rng);
     }
 
 }
