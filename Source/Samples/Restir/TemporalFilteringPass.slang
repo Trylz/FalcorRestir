@@ -123,10 +123,7 @@ RestirReservoir combineReservoirs(
     if (gPositionWs[previousPixelPos].w == 0.0f)
         return;
 
-    const float3 N = gCurrentNormalWs[pixel].xyz;
-
-
-
+    const float3 currN = gCurrentNormalWs[pixel].xyz;
 
 
 
@@ -158,6 +155,6 @@ RestirReservoir combineReservoirs(
             previousReservoir.mM = min(10 * currentReservoir.mM, previousReservoir.mM);
         }
 
-        gCurrentFrameReservoirs[currentPixelReservoirsStart + i] = combineReservoirs(currentReservoir, previousReservoir, P, N, V, diffuse, specular, roughness, rng);
+        gCurrentFrameReservoirs[currentPixelReservoirsStart + i] = combineReservoirs(currentReservoir, previousReservoir, P, currN, V, diffuse, specular, roughness, rng);
     }
 }
