@@ -126,8 +126,8 @@ RestirReservoir combineReservoirs(
     const float3 currN = gCurrentNormalWs[pixel].xyz;
     const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
 
-    //if (length(prevN - currN) > 0.0f)
-       // return;
+    if (length(prevN - currN) > 0.0f)
+        return;
 
     gPreviousNormalWs[pixel] = float4(currN, 1.0f);
 
