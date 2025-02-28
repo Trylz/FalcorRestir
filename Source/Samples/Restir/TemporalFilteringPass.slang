@@ -20,7 +20,7 @@ StructuredBuffer<RestirReservoir> gPreviousFrameReservoirs;
 Texture2D<float4> gPositionWs;
 
 Texture2D<float4> gCurrentNormalWs;
-Texture2D<float4> gPreviousNormalWs;
+RWTexture2D<float4> gPreviousNormalWs;
 
 Texture2D<float4> gAlbedo;
 Texture2D<float4> gSpecular;

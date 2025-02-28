@@ -15,14 +15,12 @@ public:
 
     inline const Falcor::ref<Falcor::Texture>& getPositionWsTexture() const { return mPositionWsTexture; }
 
-    inline const Falcor::ref<Falcor::Texture>& getCurrentNormalWsTexture() const { return *mCurrentNormalWsTexture; }
-    inline const Falcor::ref<Falcor::Texture>& getPreviousNormalWsTexture() const { return *mPreviousNormalWsTexture; }
+    inline const Falcor::ref<Falcor::Texture>& getCurrentNormalWsTexture() const { return mCurrentNormalWsTexture; }
+    inline const Falcor::ref<Falcor::Texture>& getPreviousNormalWsTexture() const { return mPreviousNormalWsTexture; }
 
     inline const Falcor::ref<Falcor::Texture>& getAlbedoTexture() const { return mAlbedoTexture; }
     inline const Falcor::ref<Falcor::Texture>& getSpecularTexture() const { return mSpecularTexture; }
     inline const Falcor::ref<Falcor::Texture>& getMotionVectorTexture() const { return mMotionVectorTexture; }
-
-    inline void setNextFrame() { std::swap(mCurrentNormalWsTexture, mPreviousNormalWsTexture); }
 
 private:
     void createTextures();
@@ -39,11 +37,8 @@ private:
     Falcor::ref<Falcor::Texture> mSpecularTexture;
     Falcor::ref<Falcor::Texture> mMotionVectorTexture;
 
-    Falcor::ref<Falcor::Texture> mNormalWsTextureBuffer1;
-    Falcor::ref<Falcor::Texture> mNormalWsTextureBuffer2;
-
-    Falcor::ref<Falcor::Texture>* mCurrentNormalWsTexture;
-    Falcor::ref<Falcor::Texture>* mPreviousNormalWsTexture;
+    Falcor::ref<Falcor::Texture> mCurrentNormalWsTexture;
+    Falcor::ref<Falcor::Texture> mPreviousNormalWsTexture;
 
     Falcor::ref<Falcor::Program> mpRaytraceProgram;
     Falcor::ref<Falcor::RtProgramVars> mpRtVars;
