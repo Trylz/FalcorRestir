@@ -2,10 +2,7 @@
 namespace Restir
 {
 
-ReservoirManager::ReservoirManager()
-{
-}
-
+ReservoirManager::ReservoirManager() {}
 
 void ReservoirManager::init(Falcor::ref<Falcor::Device> pDevice, uint32_t width, uint32_t height)
 {
@@ -20,7 +17,7 @@ void ReservoirManager::init(Falcor::ref<Falcor::Device> pDevice, uint32_t width,
     //	Create GPU reservoirs
     //------------------------------------------------------------------------------------------------------------
 
-    mReservoirBuffer1 = pDevice->createStructuredBuffer(
+    mCurrentFrameReservoir = pDevice->createStructuredBuffer(
         sizeof(RestirReservoir),
         reservoirs.size(),
         Falcor::ResourceBindFlags::ShaderResource | Falcor::ResourceBindFlags::UnorderedAccess,
@@ -29,7 +26,7 @@ void ReservoirManager::init(Falcor::ref<Falcor::Device> pDevice, uint32_t width,
         false
     );
 
-    mReservoirBuffer2 = pDevice->createStructuredBuffer(
+    mPreviousFrameReservoir = pDevice->createStructuredBuffer(
         sizeof(RestirReservoir),
         reservoirs.size(),
         Falcor::ResourceBindFlags::ShaderResource | Falcor::ResourceBindFlags::UnorderedAccess,
@@ -37,12 +34,6 @@ void ReservoirManager::init(Falcor::ref<Falcor::Device> pDevice, uint32_t width,
         reservoirs.data(),
         false
     );
-
-    //------------------------------------------------------------------------------------------------------------
-    //	Init current and previous frame reservoirs
-    //------------------------------------------------------------------------------------------------------------
-    mCurrentFrameReservoir = &mReservoirBuffer1;
-    mPreviousFrameReservoir = &mReservoirBuffer2;
 }
 
 } // namespace Restir

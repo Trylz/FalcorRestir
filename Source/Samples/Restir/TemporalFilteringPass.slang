@@ -126,11 +126,8 @@ RestirReservoir combineReservoirs(
     const float3 currN = gCurrentNormalWs[pixel].xyz;
     const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
 
-    if (length(prevN - currN) > 0.0f)
-        return;
-
-    gPreviousNormalWs[pixel] = float4(currN, 1.0f);
-
+   // if (length(prevN - currN) > 0.0f)
+       // return;
 
     const float3 V = normalize(P - cameraPositionWs);
     const float3 diffuse = gAlbedo[pixel].xyz;
