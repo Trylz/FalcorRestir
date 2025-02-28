@@ -24,7 +24,7 @@ public:
     bool onMouseEvent(const MouseEvent& mouseEvent) override;
 
 private:
-    void loadScene(const std::filesystem::path& path, const Fbo* pTargetFbo);
+    void loadScene(const std::string& path, const Fbo* pTargetFbo);
     void render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo);
 
     ref<Scene> mpScene;

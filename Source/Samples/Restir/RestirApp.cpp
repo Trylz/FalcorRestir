@@ -5,18 +5,31 @@
 #include "Utils/Math/FalcorMath.h"
 #include "Utils/UI/TextRenderer.h"
 #include <sstream>
+#include <windows.h>
+#include <iostream>
 
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 static const float4 kClearColor(0.38f, 0.52f, 0.10f, 1);
 
-#if 0
-    static const std::string kDefaultScene = "D:/RestirFalcor/TestScenes/SanMiguel/sanmiguel.pyscene";
+#if 1
+    static const std::string kDefaultScene = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
     static const bool kIsSanMiguel = true;
 #else
     static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
     static const bool kIsSanMiguel = false;
 #endif
+
+    
+// https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
+std::wstring ExePath()
+{
+    TCHAR buffer[MAX_PATH] = {0};
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+    return std::wstring(buffer).substr(0, pos);
+}
+
 
 RestirApp::RestirApp(const SampleAppConfig& config) : SampleApp(config) {}
 
@@ -29,7 +42,17 @@ void RestirApp::onLoad(RenderContext* pRenderContext)
         FALCOR_THROW("Device does not support raytracing!");
     }
 
-    loadScene(kDefaultScene, getTargetFbo().get());
+    if (kIsSanMiguel)
+    {
+        std::wstring exePath = ExePath();
+        std::string str(exePath.begin(), exePath.end());
+        str += "/" + kDefaultScene;
+        loadScene(str, getTargetFbo().get());
+    }
+    else
+    {
+        loadScene(kDefaultScene, getTargetFbo().get());
+    }
 }
 
 void RestirApp::onResize(uint32_t width, uint32_t height)
@@ -64,20 +87,6 @@ void RestirApp::onFrameRender(RenderContext* pRenderContext, const ref<Fbo>& pTa
 
 void RestirApp::onGuiRender(Gui* pGui)
 {
-    Gui::Window w(pGui, "Hello DXR Settings", {300, 400}, {10, 80});
-
-    // w.checkbox("Ray Trace", mRayTrace);
-    // w.checkbox("Use Depth of Field", mUseDOF);
-    if (w.button("Load Scene"))
-    {
-        std::filesystem::path path;
-        if (openFileDialog(Scene::getFileExtensionFilters(), path))
-        {
-            loadScene(path, getTargetFbo().get());
-        }
-    }
-
-    mpScene->renderUI(w);
 }
 
 bool RestirApp::onKeyEvent(const KeyboardEvent& keyEvent)
@@ -99,7 +108,7 @@ bool RestirApp::onMouseEvent(const MouseEvent& mouseEvent)
     return mpScene && mpScene->onMouseEvent(mouseEvent);
 }
 
-void RestirApp::loadScene(const std::filesystem::path& path, const Fbo* pTargetFbo)
+void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
 {
     mpScene = Scene::create(getDevice(), path);
     mpCamera = mpScene->getCamera();

@@ -64,7 +64,21 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
 }
 
 
-void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene) {
+void LightManager::createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene)
+{
+    Light light;
+
+    // Init light.
+    light.mRadius = 0.0001f;
+    light.mfallOff = std::min((light.mRadius * light.mRadius) * std::exp(1.0f / 0.0001f), 1.0f);
+
+    // Color
+    light.mColor = Falcor::float3(1.0f, 0.0f, 0.0f) * 5000.0f;
+
+    // Position
+    light.mWsPosition = pScene->getCamera()->getPosition();
+
+    mLights.push_back(light);
 }
 
 void LightManager::createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene)
