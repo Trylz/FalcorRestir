@@ -106,7 +106,7 @@ void LightManager::spawnRandomSanMiguelLights(
     FloatRandomNumberGenerator& rng
 )
 {
-    const uint32_t nbightsPerAxis = 4;
+    const uint32_t nbightsPerAxis = 8;
 
     for (auto& ext : extents)
     {
@@ -121,7 +121,7 @@ void LightManager::spawnRandomSanMiguelLights(
 
             light.mColor =
                 Falcor::float3(rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized(), rng.generateUnsignedNormalized()) *
-                4000.0f;
+                2000.0f;
             light.mWsPosition = controlPoint + (float)i * delta;
 
             mLights.push_back(light);
