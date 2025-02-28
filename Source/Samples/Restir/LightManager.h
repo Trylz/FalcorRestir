@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SceneName.h"
 #include "Singleton.h"
 #include "FloatRandomNumberGenerator.h"
 
@@ -16,7 +17,7 @@ struct Light
 struct LightManager
 {
     LightManager();
-    void init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, bool isSanMiguel);
+    void init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, SceneName sceneName);
 
     inline const std::vector<Light>& getLights() const { return mLights; }
     inline const Falcor::ref<Falcor::Buffer>& getLightGpuBuffer() const { return mGpuLightBuffer; }

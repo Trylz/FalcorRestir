@@ -7,6 +7,7 @@ target_sources(Restir PRIVATE
     ReservoirManager.h
     RestirApp.h
     RISPass.h
+    SceneName.h
     Singleton.h
     ShadingPass.h
     TemporalFilteringPass.h    

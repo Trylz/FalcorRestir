@@ -12,10 +12,10 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 #if 1
     static const std::string kDefaultScene = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
-    static const bool kIsSanMiguel = true;
+    static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
 #else
     static const std::string kDefaultScene = "Arcade/Arcade.pyscene";
-    static const bool kIsSanMiguel = false;
+static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #endif
 
     
@@ -40,7 +40,7 @@ void RestirApp::onLoad(RenderContext* pRenderContext)
         FALCOR_THROW("Device does not support raytracing!");
     }
 
-    if (kIsSanMiguel)
+    if (kSceneName == Restir::SceneName::SanMiguel)
     {
         std::wstring exePath = ExePath();
         std::string str(exePath.begin(), exePath.end());
@@ -122,7 +122,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
     Restir::GBufferSingleton::instance()->init(getDevice(), mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
 
     Restir::LightManagerSingleton::create();
-    Restir::LightManagerSingleton::instance()->init(getDevice(), mpScene, kIsSanMiguel);
+    Restir::LightManagerSingleton::instance()->init(getDevice(), mpScene, kSceneName);
 
     Restir::ReservoirManagerSingleton::create();
     Restir::ReservoirManagerSingleton::instance()->init(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());

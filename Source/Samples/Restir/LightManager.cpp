@@ -9,12 +9,12 @@ float luma(Falcor::float3 v)
 
 LightManager::LightManager() {}
 
-void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, bool isSanMiguel)
+void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene, SceneName sceneName)
 {
     //------------------------------------------------------------------------------------------------------------
     //	Create random lights
     //------------------------------------------------------------------------------------------------------------
-    if (isSanMiguel)
+    if (sceneName == SceneName::SanMiguel)
     {
         createSanMiguelSceneLights(pScene);
     }
