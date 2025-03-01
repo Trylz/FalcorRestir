@@ -129,7 +129,7 @@ RestirReservoir combineReservoirs(
     const float3 prevP = gPreviousPositionWs[previousPixelPos].xyz;
     if (performRadiusCheck)
     {
-        if (length(prevP - currP) > sceneRadius / 100.0f)
+        if (length(prevP - currP) > sceneRadius / 1000.0f)
             return;
     }
 
