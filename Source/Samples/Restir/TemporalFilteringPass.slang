@@ -13,6 +13,7 @@ cbuffer PerFrameCB
     uint sampleIndex;
     float sceneRadius;
     uint motion;// Maybe we wont need this is denoising does a great job
+    uint performRadiusCheck;
 };
 
 RWStructuredBuffer<RestirReservoir> gCurrentFrameReservoirs;
@@ -126,13 +127,21 @@ RestirReservoir combineReservoirs(
         return;
 
     const float3 prevP = gPreviousPositionWs[previousPixelPos].xyz;
-    if (length(prevP - currP) > sceneRadius/40.0f)
+    if (performRadiusCheck)
+    {
+        if (length(prevP - currP) > sceneRadius / 5000.0f)
+            return;
+    }
+
+    const float3 vv = normalize(currP - cameraPositionWs);
+    const float3 pp = normalize(prevP - cameraPositionWs);
+    if (acos(dot(vv, pp)) > 0.20f)
         return;
 
     const float3 currN = gCurrentNormalWs[pixel].xyz;
-    //const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
-    // if (length(prevN - currN) > 0.10f)
-    //   return;
+    const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
+    if (length(prevN - currN) > 0.10f)
+        return;
 
     const float3 V = normalize(currP - cameraPositionWs);
     const float3 diffuse = gAlbedo[pixel].xyz;

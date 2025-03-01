@@ -6,8 +6,14 @@ namespace Restir
 {
 using namespace Falcor;
 
-TemporalFilteringPass::TemporalFilteringPass(ref<Device> pDevice, Falcor::ref<Falcor::Scene> pScene, uint32_t width, uint32_t height)
-    : mpScene(pScene), mWidth(width), mHeight(height)
+TemporalFilteringPass::TemporalFilteringPass(
+    ref<Device> pDevice,
+    Falcor::ref<Falcor::Scene> pScene,
+    SceneName sceneName,
+    uint32_t width,
+    uint32_t height
+)
+    : mpScene(pScene), mWidth(width), mHeight(height), mSceneName(sceneName)
 {
     mpTemporalFilteringPass = ComputePass::create(pDevice, "Samples/Restir/TemporalFilteringPass.slang", "TemporalFilteringPass");
 }
@@ -25,6 +31,7 @@ void TemporalFilteringPass::render(Falcor::RenderContext* pRenderContext, ref<Ca
     var["PerFrameCB"]["sampleIndex"] = ++mSampleIndex;
     var["PerFrameCB"]["sceneRadius"] = mpScene->getSceneBounds().radius();
     var["PerFrameCB"]["motion"] = (uint)(mPreviousFrameViewProjMat != pCamera->getViewProjMatrix());
+    var["PerFrameCB"]["performRadiusCheck"] = (uint)(mSceneName == SceneName::SanMiguel);
 
     var["gCurrentFrameReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
     var["gPreviousFrameReservoirs"] = ReservoirManagerSingleton::instance()->getPreviousFrameReservoirBuffer();
