@@ -10,6 +10,7 @@ struct SceneSettings
     uint32_t nbReservoirPerPixel = 4u;
     float temporalWsRadiusThreshold = 999999999.0f;
     float temporalNormalThreshold = 0.12f;
+    float shadingLightExponent = 1.0f;
 };
 
 using SceneSettingsSingleton = Singleton<SceneSettings>;

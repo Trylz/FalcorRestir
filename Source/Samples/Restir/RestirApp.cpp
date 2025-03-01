@@ -129,10 +129,12 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
     case Restir::SceneName::Arcade:
         Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 4;
         Restir::SceneSettingsSingleton::instance()->nbReservoirPerPixel = 2;
+        Restir::SceneSettingsSingleton::instance()->shadingLightExponent = 3.0f;
         break;
 
     case Restir::SceneName::SanMiguel:
         Restir::SceneSettingsSingleton::instance()->temporalWsRadiusThreshold = mpScene->getSceneBounds().radius() / 1000.0f;
+        Restir::SceneSettingsSingleton::instance()->shadingLightExponent = 3.0f;
         ;
         break;
 

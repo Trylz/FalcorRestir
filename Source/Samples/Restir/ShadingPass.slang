@@ -8,6 +8,7 @@ cbuffer PerFrameCB
     uint2 viewportDims;
     float3 cameraPositionWs;
     uint nbReservoirPerPixel;
+    float shadingLightExponent;
 };
 
 RWTexture2D<float4> gOutput;
@@ -31,7 +32,7 @@ float3 computeColor(RestirReservoir reservoir, uint2 pixelIdx, float3 P, float3 
 	shading *= reservoir.m_W;
     shading /= Llen * Llen;
 
-    shading /= pow(Llen, 3.0f); //An additional tweak ;)
+    shading /= pow(Llen, shadingLightExponent); //An additional tweak ;)
 
     return shading;
 }

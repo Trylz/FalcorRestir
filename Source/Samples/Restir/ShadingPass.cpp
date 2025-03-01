@@ -26,6 +26,7 @@ void ShadingPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCam
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
     var["PerFrameCB"]["cameraPositionWs"] = pCamera->getPosition();
     var["PerFrameCB"]["nbReservoirPerPixel"] = SceneSettingsSingleton::instance()->nbReservoirPerPixel;
+    var["PerFrameCB"]["shadingLightExponent"] = SceneSettingsSingleton::instance()->shadingLightExponent;
 
     var["gOutput"] = mpOuputTexture;
     var["gReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
