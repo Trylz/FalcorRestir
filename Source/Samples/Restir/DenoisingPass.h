@@ -20,9 +20,14 @@ struct NriInterface : public nri::CoreInterface, public nri::HelperInterface, pu
 class DenoisingPass
 {
 public:
-    DenoisingPass(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor::Scene> pScene);
+    DenoisingPass(Falcor::ref<Falcor::Device> pDevice, Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Scene> pScene);
+    ~DenoisingPass();
+
+    void render(Falcor::RenderContext* pRenderContext);
 
 private:
+    void initNRI(Falcor::RenderContext* pRenderContext));
+
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
 
@@ -35,5 +40,8 @@ private:
 
     // NRD ------------------------------------------------------------
     NrdIntegration* m_NRD = nullptr;
+
+
+    Falcor::RenderContext* mpRenderContext;//TESTTING
 };
 }
