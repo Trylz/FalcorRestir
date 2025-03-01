@@ -163,7 +163,7 @@ RestirReservoir combineReservoirs(
         if (motion > 0)
         {
             // Clamp M according to paper.
-            previousReservoir.mM = min(16 * currentReservoir.mM, previousReservoir.mM);
+            previousReservoir.mM = min(10 * currentReservoir.mM, previousReservoir.mM);
         }
 
         gCurrentFrameReservoirs[currentPixelReservoirsStart + i] =
