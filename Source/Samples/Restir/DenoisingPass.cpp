@@ -1,8 +1,10 @@
 #include "DenoisingPass.h"
-#include "Dependencies/NvidiaNRD/Integration/NRDIntegration.hpp"
+//#include "Dependencies/NvidiaNRD/Integration/NRDIntegration.hpp"
 #include "Core/API/NativeHandleTraits.h"
 
 #include <slang-gfx.h>
+
+/*
 
 #if defined(_DEBUG)
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
@@ -16,6 +18,7 @@
 #else
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
 #endif
+*/
 
 namespace Restir
 {
@@ -32,6 +35,7 @@ DenoisingPass::~DenoisingPass()
 
 void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
 {
+    /*
     nri::DeviceCreationD3D12Desc deviceDesc = {};
     deviceDesc.d3d12Device = mpDevice->getNativeHandle().as<ID3D12Device*>();
 
@@ -63,10 +67,11 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     commandBufferDesc.d3d12CommandAllocator = nullptr;// YANN REALLY?
 
     m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
+    */
 }
 
-    void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
-    {
+void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
+{
 
-    }
+}
 }
