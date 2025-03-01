@@ -32,5 +32,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo Downloading Restir assets
+py ./downloadRestirAssets.py
+echo Done
+
 : Success.
 exit /b 0
