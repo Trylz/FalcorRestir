@@ -138,6 +138,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
 
     case Restir::SceneName::DragonBuddha:
         Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 16;
+        Restir::SceneSettingsSingleton::instance()->nbReservoirPerPixel = 3;
         break;
     }
 
