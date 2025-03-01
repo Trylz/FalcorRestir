@@ -33,19 +33,20 @@ CREDITS:
 #define NRD_VERSION_DATE "23 August 2024"
 
 #if defined(_MSC_VER)
-    #define NRD_CALL __fastcall
-#elif !defined(__aarch64__) && !defined(__x86_64) && (defined(__GNUC__)  || defined (__clang__))
-    #define NRD_CALL __attribute__((fastcall))
+#define NRD_CALL __fastcall
+#elif !defined(__aarch64__) && !defined(__x86_64) && (defined(__GNUC__) || defined(__clang__))
+#define NRD_CALL __attribute__((fastcall))
 #else
-    #define NRD_CALL
+#define NRD_CALL
 #endif
 
 #ifndef NRD_API
-    #ifdef NRD_STATIC_LIBRARY
-        #define NRD_API
-    #else
-        #define NRD_API extern "C"
-    #endif
+#ifdef NRD_STATIC_LIBRARY
+#define NRD_API
+#else
+// #define NRD_API extern "C"
+#define NRD_API
+#endif
 #endif
 
 #include "NRDDescs.h"
@@ -53,25 +54,31 @@ CREDITS:
 
 namespace nrd
 {
-    // Create and destroy
-    NRD_API Result NRD_CALL CreateInstance(const InstanceCreationDesc& instanceCreationDesc, Instance*& instance);
-    NRD_API void NRD_CALL DestroyInstance(Instance& instance);
+// Create and destroy
+NRD_API Result NRD_CALL CreateInstance(const InstanceCreationDesc& instanceCreationDesc, Instance*& instance);
+NRD_API void NRD_CALL DestroyInstance(Instance& instance);
 
-    // Get
-    NRD_API const LibraryDesc& NRD_CALL GetLibraryDesc();
-    NRD_API const InstanceDesc& NRD_CALL GetInstanceDesc(const Instance& instance);
+// Get
+NRD_API const LibraryDesc& NRD_CALL GetLibraryDesc();
+NRD_API const InstanceDesc& NRD_CALL GetInstanceDesc(const Instance& instance);
 
-    // Typically needs to be called once per frame
-    NRD_API Result NRD_CALL SetCommonSettings(Instance& instance, const CommonSettings& commonSettings);
+// Typically needs to be called once per frame
+NRD_API Result NRD_CALL SetCommonSettings(Instance& instance, const CommonSettings& commonSettings);
 
-    // Typically needs to be called at least once per denoiser (not necessarily on each frame)
-    NRD_API Result NRD_CALL SetDenoiserSettings(Instance& instance, Identifier identifier, const void* denoiserSettings);
+// Typically needs to be called at least once per denoiser (not necessarily on each frame)
+NRD_API Result NRD_CALL SetDenoiserSettings(Instance& instance, Identifier identifier, const void* denoiserSettings);
 
-    // Retrieves dispatches for the list of identifiers (if they are parts of the instance)
-    // IMPORTANT: returned memory is owned by the "instance" and will be overwritten by the next "GetComputeDispatches" call
-    NRD_API Result NRD_CALL GetComputeDispatches(Instance& instance, const Identifier* identifiers, uint32_t identifiersNum, const DispatchDesc*& dispatchDescs, uint32_t& dispatchDescsNum);
+// Retrieves dispatches for the list of identifiers (if they are parts of the instance)
+// IMPORTANT: returned memory is owned by the "instance" and will be overwritten by the next "GetComputeDispatches" call
+NRD_API Result NRD_CALL GetComputeDispatches(
+    Instance& instance,
+    const Identifier* identifiers,
+    uint32_t identifiersNum,
+    const DispatchDesc*& dispatchDescs,
+    uint32_t& dispatchDescsNum
+);
 
-    // Helpers
-    NRD_API const char* GetResourceTypeString(ResourceType resourceType);
-    NRD_API const char* GetDenoiserString(Denoiser denoiser);
-}
+// Helpers
+NRD_API const char* GetResourceTypeString(ResourceType resourceType);
+NRD_API const char* GetDenoiserString(Denoiser denoiser);
+} // namespace nrd
