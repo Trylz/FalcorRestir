@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Falcor.h"
+#include "DenoisingPass.h"
 #include "GBuffer.h"
 #include "RISPass.h"
 #include "ShadingPass.h"
@@ -33,5 +34,6 @@ private:
     Restir::RISPass* mpRISPass = nullptr;
     Restir::VisibilityPass* mpVisibilityPass = nullptr;
     Restir::ShadingPass* mpShadingPass = nullptr;
+    Restir::DenoisingPass* mpDenoisingPass = nullptr;
     Restir::TemporalFilteringPass* mpTemporalFilteringPass = nullptr;
 };

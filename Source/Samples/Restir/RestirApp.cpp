@@ -136,6 +136,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
     mpVisibilityPass = new Restir::VisibilityPass(getDevice(), mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpTemporalFilteringPass = new Restir::TemporalFilteringPass(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpShadingPass = new Restir::ShadingPass(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
+    mpDenoisingPass = new Restir::DenoisingPass();
 }
 
 void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo)

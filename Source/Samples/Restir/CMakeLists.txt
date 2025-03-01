@@ -38,3 +38,6 @@ target_sources(Restir PRIVATE
 target_copy_shaders(Restir Samples/Restir)
 
 target_source_group(Restir "Samples")
+
+
+include_directories("ExternalDependencies\\NvidiaNRD\\Include")
