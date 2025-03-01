@@ -127,15 +127,10 @@ RestirReservoir combineReservoirs(
         return;
 
     const float3 prevP = gPreviousPositionWs[previousPixelPos].xyz;
-    if (performRadiusCheck)
-    {
-        if (length(prevP - currP) > sceneRadius / 1000.0f)
-            return;
-    }
 
     const float3 currN = gCurrentNormalWs[pixel].xyz;
     const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
-    if (length(prevN - currN) > 0.10f)
+    if (length(prevN - currN) > 0.12f)
         return;
 
     const float3 V = normalize(currP - cameraPositionWs);
