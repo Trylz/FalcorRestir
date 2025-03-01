@@ -51,11 +51,11 @@ void RestirApp::onLoad(RenderContext* pRenderContext)
         std::wstring exePath = ExePath();
         std::string str(exePath.begin(), exePath.end());
         str += "/" + kScenePath;
-        loadScene(str, getTargetFbo().get());
+        loadScene(str, getTargetFbo().get(), pRenderContext);
     }
     else
     {
-        loadScene(kScenePath, getTargetFbo().get());
+        loadScene(kScenePath, getTargetFbo().get(), pRenderContext);
     }
 }
 
@@ -108,7 +108,7 @@ bool RestirApp::onMouseEvent(const MouseEvent& mouseEvent)
     return mpScene && mpScene->onMouseEvent(mouseEvent);
 }
 
-void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
+void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, RenderContext* pRenderContext)
 {
     mpScene = Scene::create(getDevice(), path);
     mpCamera = mpScene->getCamera();
@@ -136,7 +136,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo)
     mpVisibilityPass = new Restir::VisibilityPass(getDevice(), mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpTemporalFilteringPass = new Restir::TemporalFilteringPass(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpShadingPass = new Restir::ShadingPass(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
-    mpDenoisingPass = new Restir::DenoisingPass(getDevice(), mpScene);
+    mpDenoisingPass = new Restir::DenoisingPass(getDevice(), pRenderContext, mpScene);
 }
 
 void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo)

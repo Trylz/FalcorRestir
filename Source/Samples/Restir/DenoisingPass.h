@@ -26,11 +26,11 @@ public:
     void render(Falcor::RenderContext* pRenderContext);
 
 private:
-    void initNRI(Falcor::RenderContext* pRenderContext));
+    void initNRI(Falcor::RenderContext* pRenderContext);
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
-
+    Falcor::RenderContext* mpRenderContext; // TESTTING
 
     // NRI ------------------------------------------------------------
     NriInterface m_NRI;
@@ -42,6 +42,6 @@ private:
     NrdIntegration* m_NRD = nullptr;
 
 
-    Falcor::RenderContext* mpRenderContext;//TESTTING
+
 };
 }

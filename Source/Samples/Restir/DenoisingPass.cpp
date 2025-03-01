@@ -1,17 +1,18 @@
 #include "DenoisingPass.h"
 #include "Dependencies/NvidiaNRD/Integration/NRDIntegration.hpp"
+#include "Core/API/NativeHandleTraits.h"
 
 #include <slang-gfx.h>
 
 #if defined(_DEBUG)
-    #pragma comment(lib, __FILE__ "\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
+    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
 #else
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Release\\NRD.lib")
 #endif
 
 
 #if defined(_DEBUG)
-    #pragma comment(lib, __FILE__ "\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
+    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
 #else
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
 #endif
@@ -19,21 +20,14 @@
 namespace Restir
 {
 DenoisingPass::DenoisingPass(Falcor::ref<Falcor::Device> pDevice, Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Scene> pScene)
-    : mpDevice(pDevice), mpRenderContext(pRenderContext), mpScene(pScene)
+    : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext)
 {
-
-
-    initNRI();
-
-
-        ID3D12Device* pD3D12Device = pDevice->getNativeHandle().as<ID3D12Device*>();
-
-    auto d3d12Queue = (ID3D12CommandQueue*)handle.handleValue;
+    initNRI(pRenderContext);
 }
 
 DenoisingPass::~DenoisingPass()
 {
-
+    //TODO
 }
 
 void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
@@ -66,7 +60,7 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     ;
 
     // Not needed for NRD integration layer, but needed for NRI validation layer
-    commandBufferDesc.d3d12CommandAllocator = nullptr;
+    commandBufferDesc.d3d12CommandAllocator = nullptr;// YANN REALLY?
 
     m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
 }
