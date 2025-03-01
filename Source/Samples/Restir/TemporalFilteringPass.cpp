@@ -6,7 +6,8 @@ namespace Restir
 {
 using namespace Falcor;
 
-TemporalFilteringPass::TemporalFilteringPass(ref<Device> pDevice, uint32_t width, uint32_t height) : mWidth(width), mHeight(height)
+TemporalFilteringPass::TemporalFilteringPass(ref<Device> pDevice, Falcor::ref<Falcor::Scene> pScene, uint32_t width, uint32_t height)
+    : mpScene(pScene), mWidth(width), mHeight(height)
 {
     mpTemporalFilteringPass = ComputePass::create(pDevice, "Samples/Restir/TemporalFilteringPass.slang", "TemporalFilteringPass");
 }
@@ -22,12 +23,15 @@ void TemporalFilteringPass::render(Falcor::RenderContext* pRenderContext, ref<Ca
     var["PerFrameCB"]["previousFrameViewProjMat"] = transpose(mPreviousFrameViewProjMat);
     var["PerFrameCB"]["nbReservoirPerPixel"] = ReservoirManager::nbReservoirPerPixel;
     var["PerFrameCB"]["sampleIndex"] = ++mSampleIndex;
+    var["PerFrameCB"]["sceneRadius"] = mpScene->getSceneBounds().radius();
     var["PerFrameCB"]["motion"] = (uint)(mPreviousFrameViewProjMat != pCamera->getViewProjMatrix());
 
     var["gCurrentFrameReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
     var["gPreviousFrameReservoirs"] = ReservoirManagerSingleton::instance()->getPreviousFrameReservoirBuffer();
 
-    var["gPositionWs"] = GBufferSingleton::instance()->getPositionWsTexture();
+    var["gCurrentPositionWs"] = GBufferSingleton::instance()->getCurrentPositionWsTexture();
+    var["gPreviousPositionWs"] = GBufferSingleton::instance()->getPreviousPositionWsTexture();
+
     var["gCurrentNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
     var["gPreviousNormalWs"] = GBufferSingleton::instance()->getPreviousNormalWsTexture();
     var["gAlbedo"] = GBufferSingleton::instance()->getAlbedoTexture();

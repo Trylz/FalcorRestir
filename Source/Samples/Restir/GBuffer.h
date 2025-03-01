@@ -13,7 +13,8 @@ public:
 
     void render(Falcor::RenderContext* pRenderContext);
 
-    inline const Falcor::ref<Falcor::Texture>& getPositionWsTexture() const { return mPositionWsTexture; }
+    inline const Falcor::ref<Falcor::Texture>& getCurrentPositionWsTexture() const { return mCurrentPositionWsTexture; }
+    inline const Falcor::ref<Falcor::Texture>& getPreviousPositionWsTexture() const { return mPreviousPositionWsTexture; }
 
     inline const Falcor::ref<Falcor::Texture>& getCurrentNormalWsTexture() const { return mCurrentNormalWsTexture; }
     inline const Falcor::ref<Falcor::Texture>& getPreviousNormalWsTexture() const { return mPreviousNormalWsTexture; }
@@ -22,7 +23,11 @@ public:
     inline const Falcor::ref<Falcor::Texture>& getSpecularTexture() const { return mSpecularTexture; }
     inline const Falcor::ref<Falcor::Texture>& getMotionVectorTexture() const { return mMotionVectorTexture; }
 
-    inline void setNextFrame() { std::swap(mCurrentNormalWsTexture, mPreviousNormalWsTexture); }
+    inline void setNextFrame()
+    {
+        std::swap(mCurrentNormalWsTexture, mPreviousNormalWsTexture);
+        std::swap(mCurrentPositionWsTexture, mPreviousPositionWsTexture);
+    }
 
 private:
     void createTextures();
@@ -34,7 +39,9 @@ private:
     uint32_t mWidth;
     uint32_t mHeight;
 
-    Falcor::ref<Falcor::Texture> mPositionWsTexture;
+    Falcor::ref<Falcor::Texture> mCurrentPositionWsTexture;
+    Falcor::ref<Falcor::Texture> mPreviousPositionWsTexture;
+
     Falcor::ref<Falcor::Texture> mAlbedoTexture;
     Falcor::ref<Falcor::Texture> mSpecularTexture;
     Falcor::ref<Falcor::Texture> mMotionVectorTexture;

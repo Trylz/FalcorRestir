@@ -28,7 +28,7 @@ void RISPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCamera)
     var["gLights"] = LightManagerSingleton::instance()->getLightGpuBuffer();
     var["gLightProbabilities"] = LightManagerSingleton::instance()->getLightProbabilitiesGpuBuffer();
 
-    var["gPositionWs"] = GBufferSingleton::instance()->getPositionWsTexture();
+    var["gPositionWs"] = GBufferSingleton::instance()->getCurrentPositionWsTexture();
     var["gNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
     var["gAlbedo"] = GBufferSingleton::instance()->getAlbedoTexture();
     var["gSpecular"] = GBufferSingleton::instance()->getSpecularTexture();

@@ -11,13 +11,15 @@ cbuffer PerFrameCB
     float4x4 previousFrameViewProjMat;
     uint nbReservoirPerPixel;
     uint sampleIndex;
+    float sceneRadius;
     uint motion;// Maybe we wont need this is denoising does a great job
 };
 
 RWStructuredBuffer<RestirReservoir> gCurrentFrameReservoirs;
 StructuredBuffer<RestirReservoir> gPreviousFrameReservoirs;
 
-Texture2D<float4> gPositionWs;
+Texture2D<float4> gCurrentPositionWs;
+Texture2D<float4> gPreviousPositionWs;
 
 Texture2D<float4> gCurrentNormalWs;
 Texture2D<float4> gPreviousNormalWs;
@@ -110,17 +112,21 @@ RestirReservoir combineReservoirs(
     if (any(pixel >= viewportDims))
         return;
 
-    if (gPositionWs[pixel].w == 0.0f)
+    if (gCurrentPositionWs[pixel].w == 0.0f)
         return;
 
-    const float3 P = gPositionWs[pixel].xyz;
+    const float3 currP = gCurrentPositionWs[pixel].xyz;
 
-    int2 previousPixelPos = getPreviousFramePixelPos(float4(P, 1.0f), (float)viewportDims.x, (float)viewportDims.y);
+    int2 previousPixelPos = getPreviousFramePixelPos(float4(currP, 1.0f), (float)viewportDims.x, (float)viewportDims.y);
     if (previousPixelPos.x < 0 || previousPixelPos.x >= (int)viewportDims.x)
         return;
     if (previousPixelPos.y < 0 || previousPixelPos.y >= (int)viewportDims.y)
         return;
-    if (gPositionWs[previousPixelPos].w == 0.0f)
+    if (gPreviousPositionWs[previousPixelPos].w == 0.0f)
+        return;
+
+    const float3 prevP = gPreviousPositionWs[previousPixelPos].xyz;
+    if (length(prevP - currP) > sceneRadius/10.0f)
         return;
 
     const float3 currN = gCurrentNormalWs[pixel].xyz;
@@ -129,7 +135,7 @@ RestirReservoir combineReservoirs(
     if (length(prevN - currN) > 0.5f)
         return;
 
-    const float3 V = normalize(P - cameraPositionWs);
+    const float3 V = normalize(currP - cameraPositionWs);
     const float3 diffuse = gAlbedo[pixel].xyz;
     const float3 specular = gSpecular[pixel].xyz;
     const float roughness = gSpecular[pixel].w;
@@ -157,6 +163,7 @@ RestirReservoir combineReservoirs(
             previousReservoir.mM = min(16 * currentReservoir.mM, previousReservoir.mM);
         }
 
-        gCurrentFrameReservoirs[currentPixelReservoirsStart + i] = combineReservoirs(currentReservoir, previousReservoir, P, currN, V, diffuse, specular, roughness, rng);
+        gCurrentFrameReservoirs[currentPixelReservoirsStart + i] =
+            combineReservoirs(currentReservoir, previousReservoir, currP, currN, V, diffuse, specular, roughness, rng);
     }
 }

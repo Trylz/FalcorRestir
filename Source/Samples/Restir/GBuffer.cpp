@@ -19,7 +19,11 @@ void GBuffer::init(ref<Device> pDevice, ref<Scene> pScene, uint32_t width, uint3
 
 void GBuffer::createTextures()
 {
-    mPositionWsTexture = mpDevice->createTexture2D(
+    mCurrentPositionWsTexture = mpDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+    );
+
+    mPreviousPositionWsTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
@@ -77,7 +81,7 @@ void GBuffer::render(RenderContext* pRenderContext)
     var["PerFrameCB"]["viewportDims"] = float2(mWidth, mHeight);
     var["PerFrameCB"]["sampleIndex"] = mSampleIndex++;
 
-    var["gPositionWs"] = mPositionWsTexture;
+    var["gPositionWs"] = mCurrentPositionWsTexture;
     var["gNormalWs"] = mCurrentNormalWsTexture;
     var["gAlbedo"] = mAlbedoTexture;
     var["gSpecular"] = mSpecularTexture;
