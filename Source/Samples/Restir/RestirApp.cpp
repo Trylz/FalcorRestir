@@ -14,7 +14,7 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
 // THE SCENE WE USE.
 #define SCENE_NAME 0
 
-#if SCENE_NAME == 0
+#if SCENE_NAME == 1
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
 static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #elif SCENE_NAME == 1
@@ -127,6 +127,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
     switch (kSceneName)
     {
     case Restir::SceneName::Arcade:
+        Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 16;
         break;
 
     case Restir::SceneName::SanMiguel:
@@ -135,6 +136,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
         break;
 
     case Restir::SceneName::DragonBuddha:
+        Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 16;
         break;
     }
 
