@@ -24,6 +24,7 @@ void RISPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCamera)
     var["PerFrameCB"]["sampleIndex"] = ++mSampleIndex;
     var["PerFrameCB"]["nbReservoirPerPixel"] = SceneSettingsSingleton::instance()->nbReservoirPerPixel;
     var["PerFrameCB"]["lightCount"] = (uint32_t)LightManagerSingleton::instance()->getLights().size();
+    var["PerFrameCB"]["RISSamplesCount"] = SceneSettingsSingleton::instance()->RISSamplesCount;
 
     var["gReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
     var["gLights"] = LightManagerSingleton::instance()->getLightGpuBuffer();

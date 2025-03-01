@@ -11,6 +11,7 @@ cbuffer PerFrameCB
     uint sampleIndex;
     uint nbReservoirPerPixel;
     uint lightCount;
+    uint RISSamplesCount;
 };
 
 RWStructuredBuffer<RestirReservoir> gReservoirs;
@@ -89,7 +90,7 @@ RestirReservoir RIS(uint2 pixel)
     const float3 specular = gSpecular[pixel].xyz;
     const float roughness = gSpecular[pixel].w;
 
-    for (uint i = 0; i < 32; ++i)
+    for (uint i = 0; i < RISSamplesCount; ++i)
 	{
 		// First randomly select a light.
         const float rand = sampleNext1D(rng);
