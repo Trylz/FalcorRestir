@@ -11,9 +11,9 @@ cbuffer PerFrameCB
     float4x4 previousFrameViewProjMat;
     uint nbReservoirPerPixel;
     uint sampleIndex;
-    float sceneRadius;
     uint motion;// Maybe we wont need this is denoising does a great job
-    uint performRadiusCheck;
+    float temporalWsRadiusThreshold;
+    float temporalNormalThreshold;
 };
 
 RWStructuredBuffer<RestirReservoir> gCurrentFrameReservoirs;
@@ -127,10 +127,12 @@ RestirReservoir combineReservoirs(
         return;
 
     const float3 prevP = gPreviousPositionWs[previousPixelPos].xyz;
+    if (length(prevP - currP) > temporalWsRadiusThreshold)
+        return;
 
     const float3 currN = gCurrentNormalWs[pixel].xyz;
     const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
-    if (length(prevN - currN) > 0.12f)
+    if (length(prevN - currN) > temporalNormalThreshold)
         return;
 
     const float3 V = normalize(currP - cameraPositionWs);

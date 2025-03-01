@@ -1,6 +1,7 @@
 #include "VisibilityPass.h"
 
 #include "ReservoirManager.h"
+#include "SceneSettings.h"
 
 namespace Restir
 {
@@ -47,7 +48,7 @@ void VisibilityPass::render(Falcor::RenderContext* pRenderContext)
     auto var = mpRtVars->getRootVar();
 
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
-    var["PerFrameCB"]["nbReservoirPerPixel"] = ReservoirManager::nbReservoirPerPixel;
+    var["PerFrameCB"]["nbReservoirPerPixel"] = SceneSettingsSingleton::instance()->nbReservoirPerPixel;
 
     var["gReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
 

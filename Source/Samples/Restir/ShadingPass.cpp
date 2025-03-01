@@ -2,6 +2,7 @@
 #include "GBuffer.h"
 #include "LightManager.h"
 #include "ReservoirManager.h"
+#include "SceneSettings.h"
 
 namespace Restir
 {
@@ -24,7 +25,7 @@ void ShadingPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCam
 
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
     var["PerFrameCB"]["cameraPositionWs"] = pCamera->getPosition();
-    var["PerFrameCB"]["nbReservoirPerPixel"] = ReservoirManager::nbReservoirPerPixel;
+    var["PerFrameCB"]["nbReservoirPerPixel"] = SceneSettingsSingleton::instance()->nbReservoirPerPixel;
 
     var["gOutput"] = mpOuputTexture;
     var["gReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();

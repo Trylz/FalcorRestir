@@ -30,8 +30,6 @@ struct ReservoirManager
 
     inline void setNextFrame() { std::swap(mCurrentFrameReservoir, mPreviousFrameReservoir); }
 
-    static const uint32_t nbReservoirPerPixel = 3;
-
 private:
     Falcor::ref<Falcor::Buffer> mCurrentFrameReservoir;
     Falcor::ref<Falcor::Buffer> mPreviousFrameReservoir;

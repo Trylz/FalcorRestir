@@ -2,6 +2,7 @@
 #include "RestirApp.h"
 #include "LightManager.h"
 #include "ReservoirManager.h"
+#include "SceneSettings.h"
 #include "Utils/Math/FalcorMath.h"
 #include "Utils/UI/TextRenderer.h"
 #include <sstream>
@@ -11,7 +12,7 @@
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 // THE SCENE WE USE.
-#define SCENE_NAME 1
+#define SCENE_NAME 0
 
 #if SCENE_NAME == 0
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
@@ -121,7 +122,23 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
     mpCamera->setDepthRange(nearZ, farZ);
     mpCamera->setAspectRatio((float)pTargetFbo->getWidth() / (float)pTargetFbo->getHeight());
 
-    // Create the singletons.
+    // Create scene settings singleton.
+    Restir::SceneSettingsSingleton::create();
+    switch (kSceneName)
+    {
+    case Restir::SceneName::Arcade:
+        break;
+
+    case Restir::SceneName::SanMiguel:
+        Restir::SceneSettingsSingleton::instance()->temporalWsRadiusThreshold = mpScene->getSceneBounds().radius() / 1000.0f;
+        ;
+        break;
+
+    case Restir::SceneName::DragonBuddha:
+        break;
+    }
+
+    // Create the remaining singletons.
     Restir::GBufferSingleton::create();
     Restir::GBufferSingleton::instance()->init(getDevice(), mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
 

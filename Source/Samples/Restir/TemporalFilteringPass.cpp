@@ -1,6 +1,7 @@
 #include "TemporalFilteringPass.h"
 #include "GBuffer.h"
 #include "ReservoirManager.h"
+#include "SceneSettings.h"
 
 namespace Restir
 {
@@ -27,11 +28,15 @@ void TemporalFilteringPass::render(Falcor::RenderContext* pRenderContext, ref<Ca
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
     var["PerFrameCB"]["cameraPositionWs"] = pCamera->getPosition();
     var["PerFrameCB"]["previousFrameViewProjMat"] = transpose(mPreviousFrameViewProjMat);
-    var["PerFrameCB"]["nbReservoirPerPixel"] = ReservoirManager::nbReservoirPerPixel;
+    var["PerFrameCB"]["nbReservoirPerPixel"] = SceneSettingsSingleton::instance()->nbReservoirPerPixel;
     var["PerFrameCB"]["sampleIndex"] = ++mSampleIndex;
-    var["PerFrameCB"]["sceneRadius"] = mpScene->getSceneBounds().radius();
     var["PerFrameCB"]["motion"] = (uint)(mPreviousFrameViewProjMat != pCamera->getViewProjMatrix());
-    var["PerFrameCB"]["performRadiusCheck"] = (uint)(mSceneName == SceneName::SanMiguel);
+
+    var["PerFrameCB"]["temporalWsRadiusThreshold"] = SceneSettingsSingleton::instance()->temporalWsRadiusThreshold;
+    var["PerFrameCB"]["temporalNormalThreshold"] = SceneSettingsSingleton::instance()->temporalNormalThreshold;
+
+    float temporalWsRadiusThreshold = 999999999.0f;
+    float temporalNormalThreshold = 0.12f;
 
     var["gCurrentFrameReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
     var["gPreviousFrameReservoirs"] = ReservoirManagerSingleton::instance()->getPreviousFrameReservoirBuffer();

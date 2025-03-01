@@ -1,4 +1,6 @@
 #include "ReservoirManager.h"
+#include "SceneSettings.h"
+
 namespace Restir
 {
 
@@ -10,7 +12,7 @@ void ReservoirManager::init(Falcor::ref<Falcor::Device> pDevice, uint32_t width,
     //	Init reservoirs
     //------------------------------------------------------------------------------------------------------------
     const uint32_t nbPixels = width * height;
-    const uint32_t nbReservoirs = nbPixels * nbReservoirPerPixel;
+    const uint32_t nbReservoirs = nbPixels * SceneSettingsSingleton::instance()->nbReservoirPerPixel;
     std::vector<RestirReservoir> reservoirs(nbReservoirs);
 
     //------------------------------------------------------------------------------------------------------------

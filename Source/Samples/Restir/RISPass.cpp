@@ -2,6 +2,7 @@
 #include "GBuffer.h"
 #include "LightManager.h"
 #include "ReservoirManager.h"
+#include "SceneSettings.h"
 
 namespace Restir
 {
@@ -21,7 +22,7 @@ void RISPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCamera)
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
     var["PerFrameCB"]["cameraPositionWs"] = pCamera->getPosition();
     var["PerFrameCB"]["sampleIndex"] = ++mSampleIndex;
-    var["PerFrameCB"]["nbReservoirPerPixel"] = ReservoirManager::nbReservoirPerPixel;
+    var["PerFrameCB"]["nbReservoirPerPixel"] = SceneSettingsSingleton::instance()->nbReservoirPerPixel;
     var["PerFrameCB"]["lightCount"] = (uint32_t)LightManagerSingleton::instance()->getLights().size();
 
     var["gReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
