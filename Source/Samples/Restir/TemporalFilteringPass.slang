@@ -133,11 +133,6 @@ RestirReservoir combineReservoirs(
             return;
     }
 
-    const float3 vv = normalize(currP - cameraPositionWs);
-    const float3 pp = normalize(prevP - cameraPositionWs);
-    if (acos(dot(vv, pp)) > 0.20f)
-        return;
-
     const float3 currN = gCurrentNormalWs[pixel].xyz;
     const float3 prevN = gPreviousNormalWs[previousPixelPos].xyz;
     if (length(prevN - currN) > 0.10f)
