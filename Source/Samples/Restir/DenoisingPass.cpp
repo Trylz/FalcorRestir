@@ -121,7 +121,12 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 
 void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
 {
+    auto var = mpUnpackNRDPass->getRootVar();
 
+    var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
+    var["gInOutOutput"] = mOuputTexture;
+
+    mpUnpackNRDPass->execute(pRenderContext, mWidth, mHeight);
 }
 
 void DenoisingPass::render(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor)
