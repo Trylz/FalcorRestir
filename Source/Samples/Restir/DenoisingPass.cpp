@@ -114,7 +114,8 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     // Not needed for NRD integration layer, but needed for NRI validation layer
     commandBufferDesc.d3d12CommandAllocator = nullptr; // YANN REALLY?
 
-    m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
+    const nri::Result result = m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
+    NRD_ASSERT(result == nri::Result::SUCCESS);
 }
 
 #define NRD_ID(x) nrd::Identifier(nrd::Denoiser::x)
@@ -134,7 +135,7 @@ void DenoisingPass::initNRD()
     // NRD itself is flexible and supports any kind of dynamic resolution scaling, but NRD INTEGRATION pre-
     // allocates resources with statically defined dimensions. DRS is only supported by adjusting the viewport
     // via "CommonSettings::rectSize"
-    bool result = m_NRD->Initialize((uint16_t)mWidth, (uint16_t)mHeight, instanceCreationDesc, *m_nriDevice, m_NRI, m_NRI);
+    const bool result = m_NRD->Initialize((uint16_t)mWidth, (uint16_t)mHeight, instanceCreationDesc, *m_nriDevice, m_NRI, m_NRI);
     NRD_ASSERT(result);
 }
 
@@ -198,7 +199,8 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
     nri::TextureD3D12Desc textureDesc = {};
     textureDesc.d3d12Resource = falcorTexture->getNativeHandle().as<ID3D12Resource*>();
 
-    m_NRI.CreateTextureD3D12(*m_nriDevice, textureDesc, (nri::Texture*&)Out_IntegrationTexture->state->texture);
+    const nri::Result result = m_NRI.CreateTextureD3D12(*m_nriDevice, textureDesc, (nri::Texture*&)Out_IntegrationTexture->state->texture);
+    NRD_ASSERT(result == nri::Result::SUCCESS);
 
     D3D12_RESOURCE_DESC resDesc = textureDesc.d3d12Resource->GetDesc();
     switch (resDesc.Format)
