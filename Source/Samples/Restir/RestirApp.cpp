@@ -183,9 +183,9 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
     mpVisibilityPass->render(pRenderContext);
     mpTemporalFilteringPass->render(pRenderContext, mpCamera);
     mpShadingPass->render(pRenderContext, mpCamera);
-    // mpDenoisingPass->render(pRenderContext, mpShadingPass->getOuputTexture());
+    mpDenoisingPass->render(pRenderContext);
 
-    pRenderContext->blit(mpShadingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
+    pRenderContext->blit(mpDenoisingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
 
     Restir::GBufferSingleton::instance()->setNextFrame();
     Restir::ReservoirManagerSingleton::instance()->setNextFrame();

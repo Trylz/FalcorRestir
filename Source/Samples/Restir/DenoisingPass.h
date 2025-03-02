@@ -32,6 +32,7 @@ public:
     ~DenoisingPass();
 
     void render(Falcor::RenderContext* pRenderContext);
+    inline Falcor::ref<Falcor::Texture>& getOuputTexture() { return mOuputTexture; };
 
 private:
     void initNRI(Falcor::RenderContext* pRenderContext);
