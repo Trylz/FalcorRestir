@@ -43,7 +43,11 @@ void DenoisingPass::createTextures(Falcor::ref<Falcor::Device> pDevice)
         mWidth, mHeight, ResourceFormat::RG32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
-    mOuputTextureTexture = pDevice->createTexture2D(
+    mNormalLinearRoughnessTexture = mpDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+    );
+
+    mOuputTexture = pDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
     ); 
 }
@@ -95,17 +99,20 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<F
 
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
     var["PerFrameCB"]["viewMat"] = transpose(mpScene->getCamera()->getViewMatrix());
-    var["PerFrameCB"]["viewProjMat"] = transpose(mpScene->getCamera()->getViewProjMatrix());
+    var["PerFrameCB"]["previousFrameViewProjMat"] = mPreviousFrameViewProjMat;
 
     var["gRadianceHit"] = inColor;
-    var["gNormalRoughness"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
+    var["gNormalLinearRoughness"] = mNormalLinearRoughnessTexture;
     var["gViewZ"] = mViewZTexture;
     var["gMotionVector"] = mMotionVectorTexture;
 
+    var["gPositionWs"] = GBufferSingleton::instance()->getCurrentPositionWsTexture();
     var["gAlbedo"] = GBufferSingleton::instance()->getAlbedoTexture();
     var["gNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
 
     mpPackNRDPass->execute(pRenderContext, mWidth, mHeight);
+
+    mPreviousFrameViewProjMat = mpScene->getCamera()->getViewProjMatrix();
 }
 
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)

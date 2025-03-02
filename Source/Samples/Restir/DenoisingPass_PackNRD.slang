@@ -6,16 +6,26 @@ cbuffer PerFrameCB
 {
     uint2 viewportDims;
     float4x4 viewMat;
-    float4x4 viewProjMat;
+    float4x4 previousFrameViewProjMat;
 };
 
 RWTexture2D<float4> gRadianceHit;
-RWTexture2D<float4> gNormalRoughness;
+RWTexture2D<float4> gNormalLinearRoughness;
 RWTexture2D<float> gViewZ;
 RWTexture2D<float2> gMotionVector;
 
+Texture2D<float4> gPositionWs;
 Texture2D<float4> gAlbedo;
 Texture2D<float4> gNormalWs;
+
+int2 getPreviousFramePixelPos(float4 P, float width, float height)
+{
+    float4 ndc = mul(P, previousFrameViewProjMat);
+    ndc = ndc / ndc.w;
+    float2 s = (ndc.xy + float2(1, 1)) * 0.5f;
+    s = float2(s.x, 1.f - s.y);
+    return (int2)(s * float2(width, height));
+}
 
 [numthreads(16, 16, 1)]
 void PackNRD(uint3 threadId: SV_DispatchThreadID)
@@ -28,40 +38,22 @@ void PackNRD(uint3 threadId: SV_DispatchThreadID)
     gRadianceHit[pixel] = RELAX_FrontEnd_PackRadianceAndHitDist(gRadianceHit[pixel].xyz, gRadianceHit[pixel].w, true);
 
     // Normal roughness
+    gNormalLinearRoughness[pixel] = NRD_FrontEnd_PackNormalAndRoughness(gNormalWs[pixel].xyz, gNormalWs[pixel].w, gAlbedo[pixel].w)
 
-    float4 NRD_FrontEnd_PackNormalAndRoughness(float3 N, float roughness, float materialID)
-
-
-    gNormalRoughness[pixel] = NRD_FrontEnd_PackNormalAndRoughness(gNormalWs[pixel].xyz, gNormalWs[pixel].w, gAlbedo[pixel].w)
-
-
-
-
-
-
-    const uint pixelLinearIndex = pixel.y * viewportDims.x + pixel.x;
-    const size_t reservoirsStart = pixelLinearIndex * nbReservoirPerPixel;
-
-    const float3 P = gPositionWs[pixel].xyz;
-    const float3 N = gNormalWs[pixel].xyz;
-    const float3 V = normalize(P - cameraPositionWs);
-    const float3 diffuse = gAlbedo[pixel].xyz;
-    const float3 specular = gSpecular[pixel].xyz;
-    const float roughness = gSpecular[pixel].w;
-
-    float3 outColor = float3(0.0f, 0.0f, 0.0f);
-
-    float hitDistance = 1e8f;
-    for (uint i = 0; i <nbReservoirPerPixel; ++i)
+    // View Z and MVs
+    const float4 P = gPositionWs[pixel].w;
+    if (P.w!= 0.0f)
     {
-        const RestirReservoir r = gReservoirs[reservoirsStart + i];
-        outColor += computeColor(r, pixel, P, N, V, diffuse, specular, roughness);
+        gViewZ[pixel] = mul(P, viewMat).z;
 
-        hitDistance = min(hitDistance, r.m_hitDistance);
+        int2 prevPixel = getPreviousFramePixelPos(P, (float)viewportDims.x, (float)viewportDims.y);
+        prevPixel = clamp(prevPixel, int2(0, 0), int2(viewportDims.x - 1, viewportDims.y - 1));
+        gMotionVector[pixel] = (float2)(prevPixel - pixel);
     }
-
-    outColor/= nbReservoirPerPixel;
-
-    gOutput[pixel] = float3(outColor, hitDistance);
+    else
+    {
+        gViewZ[pixel] = 1e8f; // or 0.0?
+        gMotionVector[pixel] = 0.0f;
+    }
 }
 

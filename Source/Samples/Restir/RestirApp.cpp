@@ -180,7 +180,7 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
     mpVisibilityPass->render(pRenderContext);
     mpTemporalFilteringPass->render(pRenderContext, mpCamera);
     mpShadingPass->render(pRenderContext, mpCamera);
-    mpDenoisingPass->render(pRenderContext);
+    //mpDenoisingPass->render(pRenderContext, mpShadingPass->getOuputTexture());
 
     pRenderContext->blit(mpShadingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
 

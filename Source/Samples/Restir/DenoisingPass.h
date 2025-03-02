@@ -58,6 +58,9 @@ private:
 
     Falcor::ref<Falcor::Texture> mViewZTexture;
     Falcor::ref<Falcor::Texture> mMotionVectorTexture;
-    Falcor::ref<Falcor::Texture> mOuputTextureTexture;
+    Falcor::ref<Falcor::Texture> mNormalLinearRoughnessTexture;
+    Falcor::ref<Falcor::Texture> mOuputTexture;
+
+    Falcor::float4x4 mPreviousFrameViewProjMat;
 };
 } // namespace Restir

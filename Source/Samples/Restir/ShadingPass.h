@@ -10,7 +10,7 @@ public:
 
     void render(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Camera> pCamera);
 
-    inline const Falcor::ref<Falcor::Texture>& getOuputTexture() { return mpOuputTexture; };
+    inline Falcor::ref<Falcor::Texture>& getOuputTexture() { return mpOuputTexture; };
 
 private:
     uint32_t mWidth;
