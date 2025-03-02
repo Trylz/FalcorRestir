@@ -237,11 +237,13 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 {
     const auto& camera = mpScene->getCamera();
 
-    // Do we want to transpose theses???
-    memcpy(settings.viewToClipMatrix, &camera->getProjMatrix(), sizeof(settings.viewToClipMatrix));
+    // YANN:Do we want to transpose theses???
+    const Falcor::float4x4 currProjMatrix = camera->getProjMatrix();
+    memcpy(settings.viewToClipMatrix, &currProjMatrix, sizeof(settings.viewToClipMatrix));
     memcpy(settings.viewToClipMatrixPrev, &mPreviousFrameProjMat, sizeof(settings.viewToClipMatrixPrev));
 
-    memcpy(settings.worldToViewMatrix, &camera->getViewMatrix(), sizeof(settings.worldToViewMatrix));
+    const Falcor::float4x4 currViewMatrix = camera->getViewMatrix();
+    memcpy(settings.worldToViewMatrix, &currViewMatrix, sizeof(settings.worldToViewMatrix));
     memcpy(settings.worldToViewMatrixPrev, &mPreviousFrameViewMat, sizeof(settings.worldToViewMatrixPrev));
     //--------------------------------------------------------------------------------------------------------
 
