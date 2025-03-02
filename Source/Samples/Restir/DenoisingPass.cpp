@@ -111,7 +111,6 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     // Wrap the command buffer
     nri::CommandBufferD3D12Desc commandBufferDesc = {};
     commandBufferDesc.d3d12CommandList = pRenderContext->getLowLevelData()->getCommandBufferNativeHandle().as<ID3D12GraphicsCommandList*>();
-    ;
 
     // Not needed for NRD integration layer, but needed for NRI validation layer
     commandBufferDesc.d3d12CommandAllocator = nullptr; // YANN REALLY?
