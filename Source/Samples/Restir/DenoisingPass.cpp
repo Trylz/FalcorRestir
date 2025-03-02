@@ -102,6 +102,9 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<F
     var["gViewZ"] = mViewZTexture;
     var["gMotionVector"] = mMotionVectorTexture;
 
+    var["gAlbedo"] = GBufferSingleton::instance()->getAlbedoTexture();
+    var["gNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
+
     mpPackNRDPass->execute(pRenderContext, mWidth, mHeight);
 }
 

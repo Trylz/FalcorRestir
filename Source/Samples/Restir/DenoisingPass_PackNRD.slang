@@ -1,7 +1,6 @@
 #include "BRDF.slangh"
 #include "Reservoir.slangh"
-
-import Utils.Sampling.TinyUniformSampleGenerator;
+#include "NRD.hlsli"// todo USE PROPER YANN
 
 cbuffer PerFrameCB
 {
@@ -15,6 +14,9 @@ RWTexture2D<float4> gNormalRoughness;
 RWTexture2D<float> gViewZ;
 RWTexture2D<float2> gMotionVector;
 
+Texture2D<float4> gAlbedo;
+Texture2D<float4> gNormalWs;
+
 [numthreads(16, 16, 1)]
 void PackNRD(uint3 threadId: SV_DispatchThreadID)
 {
@@ -22,9 +24,15 @@ void PackNRD(uint3 threadId: SV_DispatchThreadID)
     if (any(pixel >= viewportDims))
         return;
 
+    // Radiance hit
+    gRadianceHit[pixel] = RELAX_FrontEnd_PackRadianceAndHitDist(gRadianceHit[pixel].xyz, gRadianceHit[pixel].w, true);
+
+    // Normal roughness
+
+    float4 NRD_FrontEnd_PackNormalAndRoughness(float3 N, float roughness, float materialID)
 
 
-
+    gNormalRoughness[pixel] = NRD_FrontEnd_PackNormalAndRoughness(gNormalWs[pixel].xyz, gNormalWs[pixel].w, gAlbedo[pixel].w)
 
 
 

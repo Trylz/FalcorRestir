@@ -58,7 +58,7 @@ void primaryClosestHit(inout PrimaryRayData hitData, BuiltInTriangleIntersection
 
     // Write the albedo.
     {
-        gAlbedo[launchIndex] = float4(bsdfProperties.diffuseReflectionAlbedo, 1.f);
+        gAlbedo[launchIndex] = float4(bsdfProperties.diffuseReflectionAlbedo, materialID);
     }
 
     // Write the specular.
