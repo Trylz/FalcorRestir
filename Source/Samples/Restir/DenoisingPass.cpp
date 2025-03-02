@@ -285,9 +285,7 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
     // settings.printfAt[0] = wantPrintf ? (uint16_t)ImGui::GetIO().MousePos.x : 9999;
     // settings.printfAt[1] = wantPrintf ? (uint16_t)ImGui::GetIO().MousePos.y : 9999;
 
-#if defined(_DEBUG)
-    settings.debug = true;
-#endif
+    settings.debug = false;
     settings.frameIndex = mFrameIndex;
 
     settings.accumulationMode = mFrameIndex ? nrd::AccumulationMode::CONTINUE : nrd::AccumulationMode::RESTART;
@@ -311,7 +309,8 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
     NRD_ASSERT(m_NRD->SetCommonSettings(commonSettings));
 
     nrd::RelaxSettings denoiserSettings{};
-    m_NRD->SetDenoiserSettings(NRD_ID(RELAX_DIFFUSE), &denoiserSettings);
+    const bool SetDenoiserSettingsRes = m_NRD->SetDenoiserSettings(NRD_ID(RELAX_DIFFUSE), &denoiserSettings);
+    NRD_ASSERT(SetDenoiserSettingsRes);
 
     //=======================================================================================================
     // PERFORM DENOISING
