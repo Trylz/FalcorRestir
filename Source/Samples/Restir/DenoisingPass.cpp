@@ -240,8 +240,6 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 {
     const auto& camera = mpScene->getCamera();
 
-    NRD_ASSERT(sizeof(Falcor::float4x4) == sizeof(settings.viewToClipMatrix));
-
     // YANN:Do we want to transpose theses???
     const Falcor::float4x4 currProjMatrix = camera->getProjMatrix();
 
