@@ -70,7 +70,7 @@ void DenoisingPass::createNRDIntegrationTextures()
     mNRDViewZ = FalcorTexture_to_NRDIntegrationTexture(mViewZTexture);
     mNRDNormalLinearRoughness = FalcorTexture_to_NRDIntegrationTexture(mNormalLinearRoughnessTexture);
     mInDiffuseRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(m_InColorTexture);
-    mOutRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(mOuputTexture);
+    mOutDiffuseRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(mOuputTexture);
 }
 
 DenoisingPass::~DenoisingPass()
@@ -79,7 +79,7 @@ DenoisingPass::~DenoisingPass()
     delete mNRDViewZ;
     delete mNRDNormalLinearRoughness;
     delete mInDiffuseRadianceHitTexture;
-    delete mOutRadianceHitTexture;
+    delete mOutDiffuseRadianceHitTexture;
 
     m_NRI.DestroyCommandBuffer(*m_nriCommandBuffer);
     nri::nriDestroyDevice(*m_nriDevice);
@@ -199,7 +199,7 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
     m_NRI.CreateTextureD3D12(*m_nriDevice, textureDesc, (nri::Texture*&)Out_IntegrationTexture->state->texture);
 
     D3D12_RESOURCE_DESC resDesc = textureDesc.d3d12Resource->GetDesc();
-    switch (resDesc.Format)
+    switch (resDesc.Format)// YANN need to validate theses inside NRI code.
     {
     case DXGI_FORMAT_R32G32B32A32_FLOAT:
         Out_IntegrationTexture->format = nri::Format::RGBA32_SFLOAT;
@@ -209,9 +209,14 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
         Out_IntegrationTexture->format = nri::Format::RGB32_SFLOAT;
         break;
 
-    case DXGI_FORMAT_R8G8B8A8_UNORM:
-        Out_IntegrationTexture->format = nri::Format::RGBA8_UNORM;
+    case DXGI_FORMAT_R32G32_FLOAT:
+        Out_IntegrationTexture->format = nri::Format::RG32_SFLOAT;
         break;
+
+    case DXGI_FORMAT_R32_FLOAT:
+        Out_IntegrationTexture->format = nri::Format::R32_SFLOAT;
+        break;
+
 
     default:
         NRD_ASSERT(false);
@@ -297,9 +302,8 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
     populateCommonSettings(commonSettings);
     NRD_ASSERT(m_NRD->SetCommonSettings(commonSettings));
 
-    nrd::RelaxSettings denoiserSettings;
-    populateDenoiserSettings(denoiserSettings, denoisingArgs);
-    m_NRD->SetDenoiserSettings(NRD_ID(REBLUR_DIFFUSE_SPECULAR), &denoiserSettings);
+    nrd::RelaxSettings denoiserSettings{};
+    m_NRD->SetDenoiserSettings(NRD_ID(RELAX_DIFFUSE), &denoiserSettings);
 
     //=======================================================================================================
     // PERFORM DENOISING
@@ -307,136 +311,17 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 
     NrdUserPool userPool = {};
     {
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, *In_NRD_MotionVectorsTexture);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, *In_NRD_ViewZTexture);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, *In_NRD_NormalRoughnessTexture);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_BASECOLOR_METALNESS, *In_NRD_BaseColorMetalnessTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, *mNRDMotionVectors);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, *mNRDViewZ);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, *mNRDNormalLinearRoughness);
 
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, *In_NRD_DiffuseRadianceHitTexture);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, *In_NRD_SpecularRadianceHitTexture);
-
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, *m_Out_NRD_DiffuseRadianceHitTexture);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, *m_Out_NRD_SpecularRadianceHitTexture);
-
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, *mInDiffuseRadianceHitTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, *mOutDiffuseRadianceHitTexture);
+        //NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
     };
 
-    const nrd::Identifier denoiserId = NRD_ID(REBLUR_DIFFUSE_SPECULAR);
-    m_NRD->Denoise(&denoiserId, 1, *ConstantNRDContextSingleton::instance()->getNRICommandBuffer(), userPool);
-
-    //=======================================================================================================
-    // COPY NRD RESULT TO READBACK HEAPS
-    //=======================================================================================================
-
-    auto sharedCmdContext = SharedDx12CommandContextSingleton::instance()->getContext();
-
-    sharedCmdContext.commandList->ResourceBarrier(
-        1,
-        &CD3DX12_RESOURCE_BARRIER::Transition(
-            m_Out_Native_DiffuseRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
-        )
-    );
-    sharedCmdContext.commandList->ResourceBarrier(
-        1,
-        &CD3DX12_RESOURCE_BARRIER::Transition(
-            m_Out_Native_SpecularRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
-        )
-    );
-
-    sharedCmdContext.commandList->CopyResource(m_diffuseRadianceReadbackHeap, m_Out_Native_DiffuseRadianceHitTexture.buffer);
-    sharedCmdContext.commandList->CopyResource(m_specularRadianceReadbackHeap, m_Out_Native_SpecularRadianceHitTexture.buffer);
-
-    sharedCmdContext.commandList->ResourceBarrier(
-        1,
-        &CD3DX12_RESOURCE_BARRIER::Transition(
-            m_Out_Native_DiffuseRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-        )
-    );
-    sharedCmdContext.commandList->ResourceBarrier(
-        1,
-        &CD3DX12_RESOURCE_BARRIER::Transition(
-            m_Out_Native_SpecularRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-        )
-    );
-
-    //=======================================================================================================
-    // WAIT COMMANDS FINISH
-    //=======================================================================================================
-
-    SharedDx12CommandContextSingleton::instance()->endCommandRecording();
-    SharedDx12CommandContextSingleton::instance()->finishTasks();
-
-    //=======================================================================================================
-    // BUILD FINAL RESULT
-    //=======================================================================================================
-    NEBULA_ASSERT(imageOut.getFormat() == ImageFormat::RGB32F);
-    RGB32FImage* imageRGBFOut = dynamic_cast<RGB32FImage*>(&imageOut);
-    NEBULA_ASSERT(imageRGBFOut);
-
-    const CD3DX12_BOX iBox(0, 0, width, height);
-    m_specularRadianceReadbackHeap->ReadFromSubresource(
-        reinterpret_cast<void*>(m_OutSpecularRadianceHit->getMutableRawData()),
-        (UINT)m_OutSpecularRadianceHit->getBytesPerRow(),
-        0,
-        0,
-        &iBox
-    );
-    m_diffuseRadianceReadbackHeap->ReadFromSubresource(
-        reinterpret_cast<void*>(m_OutDiffuseRadianceHit->getMutableRawData()), (UINT)m_OutDiffuseRadianceHit->getBytesPerRow(), 0, 0, &iBox
-    );
-
-    tbb::parallel_for(
-        size_t(0),
-        size_t(nbPixels),
-        [&](size_t tbbIdx)
-        {
-            const nbUint32 pixelIdx = (nbUint32)tbbIdx;
-            const nbUint32 pixelPosX = (nbUint32)(pixelIdx % width);
-            const nbUint32 pixelPosY = (nbUint32)(pixelIdx / width);
-            const Math::Uvec2 pixelPos = Math::Uvec2(pixelPosX, pixelPosY);
-
-            const nbBool isSpecular = gBuffer->m_isSpecularFlag->getPixelFromPosition(pixelPos).r > 0.0f;
-
-            RGBAFColor rawPixel;
-            if (isSpecular)
-            {
-                m_OutSpecularRadianceHit->getPixelFromPosition(pixelPos);
-            }
-            else
-            {
-                m_OutDiffuseRadianceHit->getPixelFromPosition(pixelPos);
-            }
-
-            const RGBAFColor unpackedPixel = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(rawPixel);
-            imageRGBFOut->setPixelFromPosition(RGBFColor(unpackedPixel.x, unpackedPixel.y, unpackedPixel.z), pixelPos);
-        }
-    );
-
-    //=======================================================================================================
-    // FREE NRD TEXTURES
-    //=======================================================================================================
-    free_NRDIntegrationTexture(In_NRD_DiffuseRadianceHitTexture);
-    free_NRDIntegrationTexture(In_NRD_SpecularRadianceHitTexture);
-    free_NRDIntegrationTexture(In_NRD_MotionVectorsTexture);
-    free_NRDIntegrationTexture(In_NRD_NormalRoughnessTexture);
-    free_NRDIntegrationTexture(In_NRD_ViewZTexture);
-    free_NRDIntegrationTexture(In_NRD_BaseColorMetalnessTexture);
-
-    //=======================================================================================================
-    // FREE NATIVE TEXTURES
-    //=======================================================================================================
-    In_Native_DiffuseRadianceHitTexture.buffer->Release();
-    In_Native_SpecularRadianceHitTexture.buffer->Release();
-    In_Native_MotionVectorsTexture.buffer->Release();
-    In_Native_NormalRoughnessTexture.buffer->Release();
-    In_Native_ViewZTexture.buffer->Release();
-    In_Native_BaseColorMetalnessTexture.buffer->Release();
-
-    //=======================================================================================================
-    // FREE PENDING RESOURCES
-    //=======================================================================================================
-    for (auto resource : pendingDx12UploadHeapsToFree)
-        resource->Release();
+    const nrd::Identifier denoiserId = NRD_ID(RELAX_DIFFUSE);
+    m_NRD->Denoise(&denoiserId, 1, *m_nriCommandBuffer, userPool);
 }
 
 } // namespace Restir

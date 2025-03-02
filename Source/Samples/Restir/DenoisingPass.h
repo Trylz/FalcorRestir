@@ -79,6 +79,6 @@ private:
     NrdIntegrationTexture* mNRDViewZ;
     NrdIntegrationTexture* mNRDNormalLinearRoughness;
     NrdIntegrationTexture* mInDiffuseRadianceHitTexture;
-    NrdIntegrationTexture* mOutRadianceHitTexture;
+    NrdIntegrationTexture* mOutDiffuseRadianceHitTexture;
 };
 } // namespace Restir
