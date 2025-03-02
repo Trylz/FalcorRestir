@@ -21,19 +21,21 @@ DenoisingPass::DenoisingPass(
     Falcor::ref<Falcor::Device> pDevice,
     Falcor::RenderContext* pRenderContext,
     Falcor::ref<Falcor::Scene> pScene,
+    Falcor::ref<Falcor::Texture>& inColor,
     uint32_t width,
     uint32_t height
 )
-  : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height)
+    : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height), m_InColorTexture(inColor)
 {
     initNRI(pRenderContext);
-    createTextures(pDevice);
+    createFalcorTextures(pDevice);
+    createNRDIntegrationTextures();
 
     mpPackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_PackNRD.slang", "PackNRD");
     mpUnpackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_UnpackNRD.slang", "UnpackNRD");
 }
 
-void DenoisingPass::createTextures(Falcor::ref<Falcor::Device> pDevice)
+void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
 {
     mViewZTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::R32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
@@ -52,9 +54,28 @@ void DenoisingPass::createTextures(Falcor::ref<Falcor::Device> pDevice)
     ); 
 }
 
+void DenoisingPass::createNRDIntegrationTextures()
+{
+    mNRDMotionVectors = FalcorTexture_to_NRDIntegrationTexture(mMotionVectorTexture);
+    mNRDViewZ = FalcorTexture_to_NRDIntegrationTexture(mViewZTexture);
+    mNRDNormalLinearRoughness = FalcorTexture_to_NRDIntegrationTexture(mNormalLinearRoughnessTexture);
+    mInDiffuseRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(m_InColorTexture);
+    mOutRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(mOuputTexture);
+}
+
 DenoisingPass::~DenoisingPass()
 {
-    // TODO
+    delete mNRDMotionVectors;
+    delete mNRDViewZ;
+    delete mNRDNormalLinearRoughness;
+    delete mInDiffuseRadianceHitTexture;
+    delete mOutRadianceHitTexture;
+
+    m_NRI.DestroyCommandBuffer(*m_nriCommandBuffer);
+    nri::nriDestroyDevice(*m_nriDevice);
+
+    m_NRD->Destroy();
+    delete m_NRD;
 }
 
 void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
@@ -93,7 +114,7 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
 }
 
 
-void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor)
+void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
 {
     auto var = mpPackNRDPass->getRootVar();
 
@@ -101,7 +122,7 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<F
     var["PerFrameCB"]["viewMat"] = transpose(mpScene->getCamera()->getViewMatrix());
     var["PerFrameCB"]["previousFrameViewProjMat"] = mPreviousFrameViewProjMat;
 
-    var["gRadianceHit"] = inColor;
+    var["gRadianceHit"] = m_InColorTexture;
     var["gNormalLinearRoughness"] = mNormalLinearRoughnessTexture;
     var["gViewZ"] = mViewZTexture;
     var["gMotionVector"] = mMotionVectorTexture;
@@ -125,15 +146,206 @@ void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
     mpUnpackNRDPass->execute(pRenderContext, mWidth, mHeight);
 }
 
-void DenoisingPass::render(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor)
+void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
 {
-    packNRD(pRenderContext, inColor);
+    packNRD(pRenderContext);
     dipatchNRD(pRenderContext);
     unpackNRD(pRenderContext);
 }
 
+NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture)
+{
+    NrdIntegrationTexture* Out_IntegrationTexture = new NrdIntegrationTexture();
 
+    // Create integration texture.
+    Out_IntegrationTexture->state = new nri::TextureBarrierDesc();
+    nri::TextureD3D12Desc textureDesc = {};
+    textureDesc.d3d12Resource = falcorTexture->getNativeHandle().as<ID3D12Resource*>();
 
-void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext) {}
+    m_NRI.CreateTextureD3D12(*m_nriDevice, textureDesc, (nri::Texture*&)Out_IntegrationTexture->state->texture);
+
+    D3D12_RESOURCE_DESC resDesc = textureDesc.d3d12Resource->GetDesc();
+    switch (resDesc.Format)
+    {
+    case DXGI_FORMAT_R32G32B32A32_FLOAT:
+        Out_IntegrationTexture->format = nri::Format::RGBA32_SFLOAT;
+        break;
+
+    case DXGI_FORMAT_R32G32B32_FLOAT:
+        Out_IntegrationTexture->format = nri::Format::RGB32_SFLOAT;
+        break;
+
+    case DXGI_FORMAT_R8G8B8A8_UNORM:
+        Out_IntegrationTexture->format = nri::Format::RGBA8_UNORM;
+        break;
+
+    default:
+        assert(false);
+    }
+    // Init integration texture.
+    // You need to specify the current state of the resource here, after denoising NRD can modify
+    // this state. Application must continue state tracking from this point.
+    // Useful information:
+    //    SRV = nri::AccessBits::SHADER_RESOURCE, nri::TextureLayout::SHADER_RESOURCE
+    //    UAV = nri::AccessBits::SHADER_RESOURCE_STORAGE, nri::TextureLayout::GENERAL
+    // entryDesc.nextState.accessBits = ConvertResourceStateToAccessBits(myResource->GetCurrentState());
+    // entryDesc.nextState.layout = ConvertResourceStateToLayout(myResource->GetCurrentState());
+
+    return Out_IntegrationTexture;
+}
+
+void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
+{
+    //=======================================================================================================
+    // SETTINGS
+    //=======================================================================================================
+
+    m_NRD->NewFrame();
+
+    nrd::CommonSettings commonSettings = {};
+    populateCommonSettings(commonSettings, denoisingArgs);
+    NEBULA_ASSERT(m_NRD->SetCommonSettings(commonSettings));
+
+    nrd::ReblurSettings denoiserSettings;
+    populateDenoiserSettings(denoiserSettings, denoisingArgs);
+    m_NRD->SetDenoiserSettings(NRD_ID(REBLUR_DIFFUSE_SPECULAR), &denoiserSettings);
+
+    //=======================================================================================================
+    // PERFORM DENOISING
+    //=======================================================================================================
+
+    NrdUserPool userPool = {};
+    {
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, *In_NRD_MotionVectorsTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, *In_NRD_ViewZTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, *In_NRD_NormalRoughnessTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_BASECOLOR_METALNESS, *In_NRD_BaseColorMetalnessTexture);
+
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, *In_NRD_DiffuseRadianceHitTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, *In_NRD_SpecularRadianceHitTexture);
+
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, *m_Out_NRD_DiffuseRadianceHitTexture);
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, *m_Out_NRD_SpecularRadianceHitTexture);
+
+        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
+    };
+
+    const nrd::Identifier denoiserId = NRD_ID(REBLUR_DIFFUSE_SPECULAR);
+    m_NRD->Denoise(&denoiserId, 1, *ConstantNRDContextSingleton::instance()->getNRICommandBuffer(), userPool);
+
+    //=======================================================================================================
+    // COPY NRD RESULT TO READBACK HEAPS
+    //=======================================================================================================
+
+    auto sharedCmdContext = SharedDx12CommandContextSingleton::instance()->getContext();
+
+    sharedCmdContext.commandList->ResourceBarrier(
+        1,
+        &CD3DX12_RESOURCE_BARRIER::Transition(
+            m_Out_Native_DiffuseRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
+        )
+    );
+    sharedCmdContext.commandList->ResourceBarrier(
+        1,
+        &CD3DX12_RESOURCE_BARRIER::Transition(
+            m_Out_Native_SpecularRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
+        )
+    );
+
+    sharedCmdContext.commandList->CopyResource(m_diffuseRadianceReadbackHeap, m_Out_Native_DiffuseRadianceHitTexture.buffer);
+    sharedCmdContext.commandList->CopyResource(m_specularRadianceReadbackHeap, m_Out_Native_SpecularRadianceHitTexture.buffer);
+
+    sharedCmdContext.commandList->ResourceBarrier(
+        1,
+        &CD3DX12_RESOURCE_BARRIER::Transition(
+            m_Out_Native_DiffuseRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+        )
+    );
+    sharedCmdContext.commandList->ResourceBarrier(
+        1,
+        &CD3DX12_RESOURCE_BARRIER::Transition(
+            m_Out_Native_SpecularRadianceHitTexture.buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+        )
+    );
+
+    //=======================================================================================================
+    // WAIT COMMANDS FINISH
+    //=======================================================================================================
+
+    SharedDx12CommandContextSingleton::instance()->endCommandRecording();
+    SharedDx12CommandContextSingleton::instance()->finishTasks();
+
+    //=======================================================================================================
+    // BUILD FINAL RESULT
+    //=======================================================================================================
+    NEBULA_ASSERT(imageOut.getFormat() == ImageFormat::RGB32F);
+    RGB32FImage* imageRGBFOut = dynamic_cast<RGB32FImage*>(&imageOut);
+    NEBULA_ASSERT(imageRGBFOut);
+
+    const CD3DX12_BOX iBox(0, 0, width, height);
+    m_specularRadianceReadbackHeap->ReadFromSubresource(
+        reinterpret_cast<void*>(m_OutSpecularRadianceHit->getMutableRawData()),
+        (UINT)m_OutSpecularRadianceHit->getBytesPerRow(),
+        0,
+        0,
+        &iBox
+    );
+    m_diffuseRadianceReadbackHeap->ReadFromSubresource(
+        reinterpret_cast<void*>(m_OutDiffuseRadianceHit->getMutableRawData()), (UINT)m_OutDiffuseRadianceHit->getBytesPerRow(), 0, 0, &iBox
+    );
+
+    tbb::parallel_for(
+        size_t(0),
+        size_t(nbPixels),
+        [&](size_t tbbIdx)
+        {
+            const nbUint32 pixelIdx = (nbUint32)tbbIdx;
+            const nbUint32 pixelPosX = (nbUint32)(pixelIdx % width);
+            const nbUint32 pixelPosY = (nbUint32)(pixelIdx / width);
+            const Math::Uvec2 pixelPos = Math::Uvec2(pixelPosX, pixelPosY);
+
+            const nbBool isSpecular = gBuffer->m_isSpecularFlag->getPixelFromPosition(pixelPos).r > 0.0f;
+
+            RGBAFColor rawPixel;
+            if (isSpecular)
+            {
+                m_OutSpecularRadianceHit->getPixelFromPosition(pixelPos);
+            }
+            else
+            {
+                m_OutDiffuseRadianceHit->getPixelFromPosition(pixelPos);
+            }
+
+            const RGBAFColor unpackedPixel = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(rawPixel);
+            imageRGBFOut->setPixelFromPosition(RGBFColor(unpackedPixel.x, unpackedPixel.y, unpackedPixel.z), pixelPos);
+        }
+    );
+
+    //=======================================================================================================
+    // FREE NRD TEXTURES
+    //=======================================================================================================
+    free_NRDIntegrationTexture(In_NRD_DiffuseRadianceHitTexture);
+    free_NRDIntegrationTexture(In_NRD_SpecularRadianceHitTexture);
+    free_NRDIntegrationTexture(In_NRD_MotionVectorsTexture);
+    free_NRDIntegrationTexture(In_NRD_NormalRoughnessTexture);
+    free_NRDIntegrationTexture(In_NRD_ViewZTexture);
+    free_NRDIntegrationTexture(In_NRD_BaseColorMetalnessTexture);
+
+    //=======================================================================================================
+    // FREE NATIVE TEXTURES
+    //=======================================================================================================
+    In_Native_DiffuseRadianceHitTexture.buffer->Release();
+    In_Native_SpecularRadianceHitTexture.buffer->Release();
+    In_Native_MotionVectorsTexture.buffer->Release();
+    In_Native_NormalRoughnessTexture.buffer->Release();
+    In_Native_ViewZTexture.buffer->Release();
+    In_Native_BaseColorMetalnessTexture.buffer->Release();
+
+    //=======================================================================================================
+    // FREE PENDING RESOURCES
+    //=======================================================================================================
+    for (auto resource : pendingDx12UploadHeapsToFree)
+        resource->Release();
+}
 
 } // namespace Restir
