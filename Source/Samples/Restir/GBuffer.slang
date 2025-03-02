@@ -6,7 +6,6 @@ RWTexture2D<float4> gPositionWs;
 RWTexture2D<float4> gNormalWs;
 RWTexture2D<float4> gAlbedo;
 RWTexture2D<float4> gSpecular;
-RWTexture2D<float4> gMotionVector;
 
 cbuffer PerFrameCB
 {
@@ -65,11 +64,6 @@ void primaryClosestHit(inout PrimaryRayData hitData, BuiltInTriangleIntersection
     // Write the specular.
     {
         gSpecular[launchIndex] = float4(bsdfProperties.specularReflectionAlbedo, bsdfProperties.roughness);
-    }
-
-    // Write the velocity TODO.
-    {
-        gMotionVector[launchIndex] = float4(0.0f, 0.0f, 0.0f, 0.0f);
     }
 }
 

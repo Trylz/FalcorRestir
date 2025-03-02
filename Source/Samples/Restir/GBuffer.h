@@ -21,7 +21,6 @@ public:
 
     inline const Falcor::ref<Falcor::Texture>& getAlbedoTexture() const { return mAlbedoTexture; }
     inline const Falcor::ref<Falcor::Texture>& getSpecularTexture() const { return mSpecularTexture; }
-    inline const Falcor::ref<Falcor::Texture>& getMotionVectorTexture() const { return mMotionVectorTexture; }
 
     inline void setNextFrame()
     {
@@ -44,7 +43,6 @@ private:
 
     Falcor::ref<Falcor::Texture> mAlbedoTexture;
     Falcor::ref<Falcor::Texture> mSpecularTexture;
-    Falcor::ref<Falcor::Texture> mMotionVectorTexture;
 
     Falcor::ref<Falcor::Texture> mCurrentNormalWsTexture;
     Falcor::ref<Falcor::Texture> mPreviousNormalWsTexture;

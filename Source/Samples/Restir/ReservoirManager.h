@@ -17,6 +17,7 @@ struct RestirReservoir
     float mWsum = 0.0f;
     uint32_t mM = 0;
     float mW = 0.0f;
+    float mHitDistance = 1e8f;
 };
 
 struct ReservoirManager

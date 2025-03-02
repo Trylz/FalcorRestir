@@ -77,6 +77,13 @@ void rayGen()
         TraceRay(gScene.rtAccel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 1 /* ray index */, rayTypeCount, 1, ray, rayData);
 
         if (rayData.hit)
+        {
             gReservoirs[reservoirsStart + i].m_W = 0.0f;
+            gReservoirs[reservoirsStart + i].m_hitDistance = Llen;
+        }
+        else
+        {
+            gReservoirs[reservoirsStart + i].m_hitDistance = 1e8f;
+        }
     }
 }

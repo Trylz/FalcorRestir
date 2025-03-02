@@ -30,8 +30,14 @@
 
 namespace Restir
 {
-DenoisingPass::DenoisingPass(Falcor::ref<Falcor::Device> pDevice, Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Scene> pScene)
-    : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext)
+DenoisingPass::DenoisingPass(
+    Falcor::ref<Falcor::Device> pDevice,
+    Falcor::RenderContext* pRenderContext,
+    Falcor::ref<Falcor::Scene> pScene,
+    uint32_t width,
+    uint32_t height
+)
+  : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height)
 {
     initNRI(pRenderContext);
 }

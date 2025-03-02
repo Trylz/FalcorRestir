@@ -11,6 +11,7 @@ struct RestirReservoir
     float mWsum;
     uint mM;
     float m_W;
+    float m_hitDistance;
 };
 
 void initReservoir(inout RestirReservoir r)
@@ -18,6 +19,7 @@ void initReservoir(inout RestirReservoir r)
     r.mWsum = 0.0f;
     r.mM = 0;
     r.m_W = 0.0f;
+    r.m_hitDistance = 1e8f;
 }
 
 void updateReservoir(inout RestirReservoir r, inout TinyUniformSampleGenerator rng, RestirSample xi, float wi)
