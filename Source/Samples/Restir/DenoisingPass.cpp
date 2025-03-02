@@ -115,10 +115,6 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<F
     mPreviousFrameViewProjMat = mpScene->getCamera()->getViewProjMatrix();
 }
 
-void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
-{
-}
-
 void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
 {
     auto var = mpUnpackNRDPass->getRootVar();
@@ -135,4 +131,9 @@ void DenoisingPass::render(Falcor::RenderContext* pRenderContext, Falcor::ref<Fa
     dipatchNRD(pRenderContext);
     unpackNRD(pRenderContext);
 }
+
+
+
+void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext) {}
+
 } // namespace Restir
