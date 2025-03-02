@@ -69,7 +69,8 @@ private:
     Falcor::ref<Falcor::Texture> mMotionVectorTexture;
     Falcor::ref<Falcor::Texture> mNormalLinearRoughnessTexture;
     Falcor::ref<Falcor::Texture> mOuputTexture;
-    Falcor::ref<Falcor::Texture> m_InColorTexture;// From Shading pass.
+
+    Falcor::ref<Falcor::Texture> m_InColorTexture; // From Shading pass.
 
     Falcor::float4x4 mPreviousFrameViewMat;
     Falcor::float4x4 mPreviousFrameProjMat;

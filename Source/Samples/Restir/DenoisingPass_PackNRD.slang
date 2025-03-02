@@ -1,5 +1,5 @@
-#include "NRDEncoding.hlsli"// todo USE PROPER YANN
-#include "NRD.hlsli"// todo USE PROPER YANN
+#include "NRDEncoding.hlsli"
+#include "NRD.hlsli"
 
 cbuffer PerFrameCB
 {

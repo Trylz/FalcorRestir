@@ -6,19 +6,18 @@
 #include <slang-gfx.h>
 
 #if defined(_DEBUG)
-    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
-    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
+#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
+#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
 #else
-    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
-    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Release\\NRD.lib")
+#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
+#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Release\\NRD.lib")
 #endif
 
-
 #if defined _DEBUG
-    #include <cassert>
-    #define NRD_ASSERT(x) assert(x)
+#include <cassert>
+#define NRD_ASSERT(x) assert(x)
 #else
-    #define NRD_ASSERT(x) (x)
+#define NRD_ASSERT(x) (x)
 #endif
 
 namespace Restir
@@ -61,7 +60,7 @@ void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
 
     mOuputTexture = pDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
-    ); 
+    );
 }
 
 void DenoisingPass::createNRDIntegrationTextures()
@@ -141,11 +140,13 @@ void DenoisingPass::initNRD()
 
 void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
 {
+    FALCOR_PROFILE(pRenderContext, "DenoisingPass::packNRD");
+
     auto var = mpPackNRDPass->getRootVar();
 
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
     var["PerFrameCB"]["viewMat"] = transpose(mpScene->getCamera()->getViewMatrix());
-    var["PerFrameCB"]["previousFrameViewProjMat"] = mPreviousFrameViewProjMat;
+    var["PerFrameCB"]["previousFrameViewProjMat"] = transpose(mPreviousFrameViewProjMat);
 
     var["gRadianceHit"] = m_InColorTexture;
     var["gNormalLinearRoughness"] = mNormalLinearRoughnessTexture;
@@ -161,6 +162,8 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
 
 void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
 {
+    FALCOR_PROFILE(pRenderContext, "DenoisingPass::unpackNRD");
+
     auto var = mpUnpackNRDPass->getRootVar();
 
     var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
@@ -171,6 +174,10 @@ void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
 
 void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
 {
+    NRD_ASSERT(pRenderContext == mpRenderContext);
+
+    FALCOR_PROFILE(pRenderContext, "DenoisingPass::render");
+
     packNRD(pRenderContext);
     dipatchNRD(pRenderContext);
     unpackNRD(pRenderContext);
@@ -194,7 +201,7 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
     m_NRI.CreateTextureD3D12(*m_nriDevice, textureDesc, (nri::Texture*&)Out_IntegrationTexture->state->texture);
 
     D3D12_RESOURCE_DESC resDesc = textureDesc.d3d12Resource->GetDesc();
-    switch (resDesc.Format)// YANN need to validate theses inside NRI code.
+    switch (resDesc.Format)
     {
     case DXGI_FORMAT_R32G32B32A32_FLOAT:
         Out_IntegrationTexture->format = nri::Format::RGBA32_SFLOAT;
@@ -211,7 +218,6 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
     case DXGI_FORMAT_R32_FLOAT:
         Out_IntegrationTexture->format = nri::Format::R32_SFLOAT;
         break;
-
 
     default:
         NRD_ASSERT(false);
@@ -232,8 +238,11 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 {
     const auto& camera = mpScene->getCamera();
 
+    NRD_ASSERT(sizeof(Falcor::float4x4) == sizeof(settings.viewToClipMatrix));
+
     // YANN:Do we want to transpose theses???
     const Falcor::float4x4 currProjMatrix = camera->getProjMatrix();
+
     memcpy(settings.viewToClipMatrix, &currProjMatrix, sizeof(settings.viewToClipMatrix));
     memcpy(settings.viewToClipMatrixPrev, &mPreviousFrameProjMat, sizeof(settings.viewToClipMatrixPrev));
 
@@ -242,7 +251,7 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
     memcpy(settings.worldToViewMatrixPrev, &mPreviousFrameViewMat, sizeof(settings.worldToViewMatrixPrev));
     //--------------------------------------------------------------------------------------------------------
 
-    settings.motionVectorScale[0] = 1.0f; 
+    settings.motionVectorScale[0] = 1.0f;
     settings.motionVectorScale[1] = 1.0f;
     settings.motionVectorScale[2] = 0.0f;
 
@@ -281,7 +290,7 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 #endif
     settings.frameIndex = mFrameIndex;
 
-    settings.accumulationMode = settings.frameIndex ? nrd::AccumulationMode::CONTINUE : nrd::AccumulationMode::RESTART;
+    settings.accumulationMode = mFrameIndex ? nrd::AccumulationMode::CONTINUE : nrd::AccumulationMode::RESTART;
     settings.isMotionVectorInWorldSpace = false;
     settings.isBaseColorMetalnessAvailable = false;
     settings.enableValidation = false;
@@ -289,6 +298,8 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 {
+    FALCOR_PROFILE(pRenderContext, "DenoisingPass::dipatchNRD");
+
     //=======================================================================================================
     // SETTINGS
     //=======================================================================================================
@@ -314,7 +325,7 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 
         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, *mInDiffuseRadianceHitTexture);
         NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, *mOutDiffuseRadianceHitTexture);
-        //NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
+        // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
     };
 
     const nrd::Identifier denoiserId = NRD_ID(RELAX_DIFFUSE);

@@ -72,6 +72,8 @@ void GBuffer::compilePrograms()
 
 void GBuffer::render(RenderContext* pRenderContext)
 {
+    FALCOR_PROFILE(pRenderContext, "GBuffer::render");
+
     auto var = mpRtVars->getRootVar();
 
     var["PerFrameCB"]["viewportDims"] = float2(mWidth, mHeight);
