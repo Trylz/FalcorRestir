@@ -18,13 +18,14 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
 static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #elif SCENE_NAME == 1
-// To work model is required. READ TestScenes\SanMiguel\README.txt
-static const std::string kScenePath = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
-static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
-#else
 // To work model is required. READ TestScenes\DragonBuddha\README.txt
 static const std::string kScenePath = "../../../../TestScenes/DragonBuddha/dragonbuddha.pyscene";
 static const Restir::SceneName kSceneName = Restir::SceneName::DragonBuddha;
+
+#else // To work model is required. READ TestScenes\SanMiguel\README.txt
+static const std::string kScenePath = "../../../../TestScenes/SanMiguel/sanmiguel.pyscene";
+static const Restir::SceneName kSceneName = Restir::SceneName::SanMiguel;
+
 #endif
 
 // https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
@@ -132,15 +133,15 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
         Restir::SceneSettingsSingleton::instance()->shadingLightExponent = 3.0f;
         break;
 
+    case Restir::SceneName::DragonBuddha:
+        Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 16;
+        Restir::SceneSettingsSingleton::instance()->nbReservoirPerPixel = 3;
+        break;
+
     case Restir::SceneName::SanMiguel:
         Restir::SceneSettingsSingleton::instance()->temporalWsRadiusThreshold = mpScene->getSceneBounds().radius() / 1000.0f;
         Restir::SceneSettingsSingleton::instance()->shadingLightExponent = 3.0f;
         ;
-        break;
-
-    case Restir::SceneName::DragonBuddha:
-        Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 16;
-        Restir::SceneSettingsSingleton::instance()->nbReservoirPerPixel = 3;
         break;
     }
 
@@ -160,8 +161,9 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
     mpTemporalFilteringPass =
         new Restir::TemporalFilteringPass(getDevice(), mpScene, kSceneName, pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpShadingPass = new Restir::ShadingPass(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
-    mpDenoisingPass =
-        new Restir::DenoisingPass(getDevice(), pRenderContext, mpScene, mpShadingPass->getOuputTexture(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
+    mpDenoisingPass = new Restir::DenoisingPass(
+        getDevice(), pRenderContext, mpScene, mpShadingPass->getOuputTexture(), pTargetFbo->getWidth(), pTargetFbo->getHeight()
+    );
 }
 
 void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo)
@@ -181,7 +183,7 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
     mpVisibilityPass->render(pRenderContext);
     mpTemporalFilteringPass->render(pRenderContext, mpCamera);
     mpShadingPass->render(pRenderContext, mpCamera);
-    //mpDenoisingPass->render(pRenderContext, mpShadingPass->getOuputTexture());
+    // mpDenoisingPass->render(pRenderContext, mpShadingPass->getOuputTexture());
 
     pRenderContext->blit(mpShadingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
 

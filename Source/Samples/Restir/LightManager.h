@@ -27,8 +27,8 @@ struct LightManager
 
 private:
     void createArcadeSceneLights(Falcor::ref<Falcor::Scene> pScene);
-    void createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene);
     void createDragonBuddhaSceneLights(Falcor::ref<Falcor::Scene> pScene);
+    void createSanMiguelSceneLights(Falcor::ref<Falcor::Scene> pScene);
 
     void spawnRandomSanMiguelLights(
         const Falcor::float3 controlPoint,

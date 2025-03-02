@@ -20,12 +20,12 @@ void LightManager::init(Falcor::ref<Falcor::Device> pDevice, Falcor::ref<Falcor:
         createArcadeSceneLights(pScene);
         break;
 
-    case SceneName::SanMiguel:
-        createSanMiguelSceneLights(pScene);
-        break;
-
     case SceneName::DragonBuddha:
         createDragonBuddhaSceneLights(pScene);
+        break;
+
+    case SceneName::SanMiguel:
+        createSanMiguelSceneLights(pScene);
         break;
     }
 
