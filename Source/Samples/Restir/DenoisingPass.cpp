@@ -28,6 +28,8 @@ DenoisingPass::DenoisingPass(
     : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height), m_InColorTexture(inColor)
 {
     initNRI(pRenderContext);
+    initNRD();
+
     createFalcorTextures(pDevice);
     createNRDIntegrationTextures();
 
@@ -113,6 +115,26 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
 }
 
+#define NRD_ID(x) nrd::Identifier(nrd::Denoiser::x)
+
+void DenoisingPass::initNRD()
+{
+    m_NRD = new NrdIntegration(1, false, "DenoisingPass NrdIntegration");
+
+    const nrd::DenoiserDesc denoiserDescs[] = {
+        {NRD_ID(RELAX_DIFFUSE), nrd::Denoiser::RELAX_DIFFUSE},
+    };
+
+    nrd::InstanceCreationDesc instanceCreationDesc = {};
+    instanceCreationDesc.denoisers = denoiserDescs;
+    instanceCreationDesc.denoisersNum = _countof(denoiserDescs);
+
+    // NRD itself is flexible and supports any kind of dynamic resolution scaling, but NRD INTEGRATION pre-
+    // allocates resources with statically defined dimensions. DRS is only supported by adjusting the viewport
+    // via "CommonSettings::rectSize"
+    bool result = m_NRD->Initialize((uint16_t)mWidth, (uint16_t)mHeight, instanceCreationDesc, *m_nriDevice, m_NRI, m_NRI);
+    assert(result);
+}
 
 void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
 {
@@ -194,6 +216,11 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
     return Out_IntegrationTexture;
 }
 
+void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
+{
+
+}
+
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 {
     //=======================================================================================================
@@ -203,10 +230,10 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
     m_NRD->NewFrame();
 
     nrd::CommonSettings commonSettings = {};
-    populateCommonSettings(commonSettings, denoisingArgs);
+    populateCommonSettings(commonSettings);
     NEBULA_ASSERT(m_NRD->SetCommonSettings(commonSettings));
 
-    nrd::ReblurSettings denoiserSettings;
+    nrd::RelaxSettings denoiserSettings;
     populateDenoiserSettings(denoiserSettings, denoisingArgs);
     m_NRD->SetDenoiserSettings(NRD_ID(REBLUR_DIFFUSE_SPECULAR), &denoiserSettings);
 

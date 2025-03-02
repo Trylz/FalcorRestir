@@ -35,6 +35,7 @@ public:
 
 private:
     void initNRI(Falcor::RenderContext* pRenderContext);
+    void initNRD();
     void createFalcorTextures(Falcor::ref<Falcor::Device> pDevice);
     void createNRDIntegrationTextures();
 
@@ -43,6 +44,7 @@ private:
     void unpackNRD(Falcor::RenderContext* pRenderContext);
 
     NrdIntegrationTexture* FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture);
+    void populateCommonSettings(nrd::CommonSettings& settings);
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
