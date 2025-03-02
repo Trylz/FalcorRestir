@@ -6,49 +6,30 @@ import Utils.Sampling.TinyUniformSampleGenerator;
 cbuffer PerFrameCB
 {
     uint2 viewportDims;
-    float3 cameraPositionWs;
-    uint nbReservoirPerPixel;
-    float shadingLightExponent;
+    float4x4 viewMat;
+    float4x4 viewProjMat;
 };
 
-RWTexture2D<float4> gOutput;
-StructuredBuffer<RestirReservoir> gReservoirs;
-
-Texture2D<float4> gPositionWs;
-Texture2D<float4> gNormalWs;
-Texture2D<float4> gAlbedo;
-Texture2D<float4> gSpecular;
-
-float3 computeColor(RestirReservoir reservoir, uint2 pixelIdx, float3 P, float3 N, float3 V, float3 diffuse, float3 specular, float roughness)
-{ 
-    float3 L =  reservoir.mY.mLightSamplePosition - P;
-    const float Llen = length(L); 
-    L /= Llen;
-
-    float3 shading = evaluateBRDF(N, L, V, diffuse, specular, roughness);
-    shading *= max(0.0f, dot(L, N));
-
-    shading *= reservoir.mY.mIncomingRadiance;
-	shading *= reservoir.m_W;
-    shading /= Llen * Llen;
-
-    shading /= pow(Llen, shadingLightExponent); //An additional tweak ;)
-
-    return shading;
-}
+RWTexture2D<float4> gRadianceHit;
+RWTexture2D<float4> gNormalRoughness;
+RWTexture2D<float> gViewZ;
+RWTexture2D<float2> gMotionVector;
 
 [numthreads(16, 16, 1)]
-void ShadingPass(uint3 threadId: SV_DispatchThreadID)
+void PackNRD(uint3 threadId: SV_DispatchThreadID)
 {
     const uint2 pixel = threadId.xy;
     if (any(pixel >= viewportDims))
         return;
 
-    if (gPositionWs[pixel].w == 0.0f)
-    {
-       gOutput[pixel] = float4(1.0f, 1.0f,1.0f, 1e8f);
-       return;
-    }
+
+
+
+
+
+
+
+
 
     const uint pixelLinearIndex = pixel.y * viewportDims.x + pixel.x;
     const size_t reservoirsStart = pixelLinearIndex * nbReservoirPerPixel;

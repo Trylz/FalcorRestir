@@ -29,13 +29,15 @@ public:
     );
     ~DenoisingPass();
 
-    void render(Falcor::RenderContext* pRenderContext);
+    void render(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor);
 
 private:
     void initNRI(Falcor::RenderContext* pRenderContext);
     void createTextures(Falcor::ref<Falcor::Device> pDevice);
 
-    void prepareNRDInputs(Falcor::RenderContext* pRenderContext);
+    void packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor);
+    void dipatchNRD(Falcor::RenderContext* pRenderContext);
+    void unpackNRD(Falcor::RenderContext* pRenderContext);
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
@@ -43,7 +45,6 @@ private:
 
     Falcor::ref<Falcor::ComputePass> mpPackNRDPass;
     Falcor::ref<Falcor::ComputePass> mpUnpackNRDPass;
-
 
     uint32_t mWidth;
     uint32_t mHeight;

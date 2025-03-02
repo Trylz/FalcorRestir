@@ -1,32 +1,17 @@
 #include "DenoisingPass.h"
 #include "Dependencies/NvidiaNRD/Integration/NRDIntegration.hpp"
+#include "GBuffer.h"
 #include "Core/API/NativeHandleTraits.h"
 
 #include <slang-gfx.h>
 
 #if defined(_DEBUG)
-#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
-#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
-#else
-#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
-#pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Release\\NRD.lib")
-#endif
-
-/*
-
-#if defined(_DEBUG)
+    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Debug\\NRD.lib")
 #else
+    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Release\\NRD.lib")
 #endif
-
-
-#if defined(_DEBUG)
-    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
-#else
-    #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Release\\NRI.lib")
-#endif
-*/
 
 namespace Restir
 {
@@ -43,12 +28,15 @@ DenoisingPass::DenoisingPass(
 {
     initNRI(pRenderContext);
     createTextures(pDevice);
+
+    mpPackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_PackNRD.slang.slang", "PackNRD");
+    mpUnpackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_UnpackNRD.slang", "UnpackNRD");
 }
 
 void DenoisingPass::createTextures(Falcor::ref<Falcor::Device> pDevice)
 {
     mViewZTexture = mpDevice->createTexture2D(
-        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+        mWidth, mHeight, ResourceFormat::R32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
 
     mMotionVectorTexture = mpDevice->createTexture2D(
@@ -100,12 +88,36 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
 }
 
-void DenoisingPass::prepareNRDInputs(Falcor::RenderContext* pRenderContext) {
+
+void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor)
+{
+    auto var = mpPackNRDPass->getRootVar();
+
+    var["PerFrameCB"]["viewportDims"] = uint2(mWidth, mHeight);
+    var["PerFrameCB"]["viewMat"] = transpose(mpScene->getCamera()->getViewMatrix());
+    var["PerFrameCB"]["viewProjMat"] = transpose(mpScene->getCamera()->getViewProjMatrix());
+
+    var["gRadianceHit"] = inColor;
+    var["gNormalRoughness"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
+    var["gViewZ"] = mViewZTexture;
+    var["gMotionVector"] = mMotionVectorTexture;
+
+    mpPackNRDPass->execute(pRenderContext, mWidth, mHeight);
+}
+
+void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
+{
+}
+
+void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
+{
 
 }
 
-void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
+void DenoisingPass::render(Falcor::RenderContext* pRenderContext, Falcor::ref<Falcor::Texture>& inColor)
 {
-    prepareNRDInputs(pRenderContext);
+    packNRD(pRenderContext, inColor);
+    dipatchNRD(pRenderContext);
+    unpackNRD(pRenderContext);
 }
 } // namespace Restir
