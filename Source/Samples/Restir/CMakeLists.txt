@@ -25,6 +25,9 @@ target_sources(Restir PRIVATE
 	TemporalFilteringPass.cpp
 	VisibilityPass.cpp
 
+    DenoisingPass_PackNRD.slang
+    DenoisingPass_UnpackNRD.slang
+
     GBuffer.slang
     RISPass.slang
     ShadingPass.slang

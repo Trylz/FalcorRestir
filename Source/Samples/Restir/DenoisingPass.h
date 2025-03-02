@@ -33,10 +33,17 @@ public:
 
 private:
     void initNRI(Falcor::RenderContext* pRenderContext);
+    void createTextures(Falcor::ref<Falcor::Device> pDevice);
+
+    void prepareNRDInputs(Falcor::RenderContext* pRenderContext);
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
     Falcor::RenderContext* mpRenderContext; // TESTTING
+
+    Falcor::ref<Falcor::ComputePass> mpPackNRDPass;
+    Falcor::ref<Falcor::ComputePass> mpUnpackNRDPass;
+
 
     uint32_t mWidth;
     uint32_t mHeight;
@@ -47,5 +54,9 @@ private:
     nri::CommandBuffer* m_nriCommandBuffer = nullptr;
 
     NrdIntegration* m_NRD = nullptr;
+
+    Falcor::ref<Falcor::Texture> mViewZTexture;
+    Falcor::ref<Falcor::Texture> mMotionVectorTexture;
+    Falcor::ref<Falcor::Texture> mOuputTextureTexture;
 };
 } // namespace Restir

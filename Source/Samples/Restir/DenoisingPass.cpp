@@ -30,6 +30,8 @@
 
 namespace Restir
 {
+using namespace Falcor;
+
 DenoisingPass::DenoisingPass(
     Falcor::ref<Falcor::Device> pDevice,
     Falcor::RenderContext* pRenderContext,
@@ -40,6 +42,22 @@ DenoisingPass::DenoisingPass(
   : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height)
 {
     initNRI(pRenderContext);
+    createTextures(pDevice);
+}
+
+void DenoisingPass::createTextures(Falcor::ref<Falcor::Device> pDevice)
+{
+    mViewZTexture = mpDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+    );
+
+    mMotionVectorTexture = mpDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RG32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+    );
+
+    mOuputTextureTexture = pDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
+    ); 
 }
 
 DenoisingPass::~DenoisingPass()
@@ -82,5 +100,8 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
 }
 
-void DenoisingPass::render(Falcor::RenderContext* pRenderContext) {}
+void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
+{
+    prepareNRDInputs(pRenderContext);
+}
 } // namespace Restir
