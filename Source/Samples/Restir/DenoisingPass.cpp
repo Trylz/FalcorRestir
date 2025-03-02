@@ -29,7 +29,7 @@ DenoisingPass::DenoisingPass(
     initNRI(pRenderContext);
     createTextures(pDevice);
 
-    mpPackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_PackNRD.slang.slang", "PackNRD");
+    mpPackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_PackNRD.slang", "PackNRD");
     mpUnpackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_UnpackNRD.slang", "UnpackNRD");
 }
 

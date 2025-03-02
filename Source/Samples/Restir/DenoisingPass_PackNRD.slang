@@ -1,5 +1,4 @@
-#include "BRDF.slangh"
-#include "Reservoir.slangh"
+#include "NRDEncoding.hlsli"// todo USE PROPER YANN
 #include "NRD.hlsli"// todo USE PROPER YANN
 
 cbuffer PerFrameCB
@@ -38,7 +37,7 @@ void PackNRD(uint3 threadId: SV_DispatchThreadID)
     gRadianceHit[pixel] = RELAX_FrontEnd_PackRadianceAndHitDist(gRadianceHit[pixel].xyz, gRadianceHit[pixel].w, true);
 
     // Normal roughness
-    gNormalLinearRoughness[pixel] = NRD_FrontEnd_PackNormalAndRoughness(gNormalWs[pixel].xyz, gNormalWs[pixel].w, gAlbedo[pixel].w)
+    gNormalLinearRoughness[pixel] = NRD_FrontEnd_PackNormalAndRoughness(gNormalWs[pixel].xyz, gNormalWs[pixel].w, gAlbedo[pixel].w);
 
     // View Z and MVs
     const float4 P = gPositionWs[pixel].w;
