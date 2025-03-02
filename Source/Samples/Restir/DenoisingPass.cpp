@@ -96,12 +96,8 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     gfx::InteropHandle queueHandle;
     mpDevice->getGfxCommandQueue()->getNativeHandle(&queueHandle);
     deviceDesc.d3d12GraphicsQueue = (ID3D12CommandQueue*)queueHandle.handleValue;
+    deviceDesc.enableNRIValidation = false;
 
-#if defined(_DEBUG)
-    deviceDesc.enableNRIValidation = false;
-#else
-    deviceDesc.enableNRIValidation = false;
-#endif
     nri::Result nriResult = nri::nriCreateDeviceFromD3D12Device(deviceDesc, m_nriDevice);
 
     // Get core functionality

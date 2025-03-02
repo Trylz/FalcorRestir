@@ -35,9 +35,6 @@ void TemporalFilteringPass::render(Falcor::RenderContext* pRenderContext, ref<Ca
     var["PerFrameCB"]["temporalWsRadiusThreshold"] = SceneSettingsSingleton::instance()->temporalWsRadiusThreshold;
     var["PerFrameCB"]["temporalNormalThreshold"] = SceneSettingsSingleton::instance()->temporalNormalThreshold;
 
-    float temporalWsRadiusThreshold = 999999999.0f;
-    float temporalNormalThreshold = 0.12f;
-
     var["gCurrentFrameReservoirs"] = ReservoirManagerSingleton::instance()->getCurrentFrameReservoirBuffer();
     var["gPreviousFrameReservoirs"] = ReservoirManagerSingleton::instance()->getPreviousFrameReservoirBuffer();
 
