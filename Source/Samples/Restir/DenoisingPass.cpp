@@ -352,7 +352,7 @@ struct CD3DX12_RESOURCE_BARRIER : public D3D12_RESOURCE_BARRIER
     operator const D3D12_RESOURCE_BARRIER&() const { return *this; }
 };
 
-void DenoisingPass::TransitionTexture(Falcor::ref<Falcor::Texture>& falcorTexture)
+void DenoisingPass::TransitionTextureToCommon(Falcor::ref<Falcor::Texture>& falcorTexture)
 {
     ID3D12Resource* nativeTexture = falcorTexture->getNativeHandle().as<ID3D12Resource*>();
 
@@ -401,20 +401,20 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
     mNRINativeCommandAllocator->Reset();
     const HRESULT hr = mNRINativeCommandList->Reset(mNRINativeCommandAllocator, nullptr);
 
-    TransitionTexture(mViewZTexture);
-    TransitionTexture(mMotionVectorTexture);
-    TransitionTexture(mNormalLinearRoughnessTexture);
-    TransitionTexture(mOuputTexture);
-    TransitionTexture(m_InColorTexture);
+    TransitionTextureToCommon(mViewZTexture);
+    TransitionTextureToCommon(mMotionVectorTexture);
+    TransitionTextureToCommon(mNormalLinearRoughnessTexture);
+    TransitionTextureToCommon(mOuputTexture);
+    TransitionTextureToCommon(m_InColorTexture);
 
     const nrd::Identifier denoiserId = NRD_ID(RELAX_DIFFUSE);
     m_NRD->Denoise(&denoiserId, 1, *m_nriCommandBuffer, userPool);
 
-    TransitionTexture(mViewZTexture);
-    TransitionTexture(mMotionVectorTexture);
-    TransitionTexture(mNormalLinearRoughnessTexture);
-    TransitionTexture(mOuputTexture);
-    TransitionTexture(m_InColorTexture);
+    TransitionTextureToCommon(mViewZTexture);
+    TransitionTextureToCommon(mMotionVectorTexture);
+    TransitionTextureToCommon(mNormalLinearRoughnessTexture);
+    TransitionTextureToCommon(mOuputTexture);
+    TransitionTextureToCommon(m_InColorTexture);
 
     //---------------------------------------------------------------------------------------------------------------------------------
 
