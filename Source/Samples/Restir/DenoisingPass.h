@@ -47,6 +47,8 @@ private:
     NrdIntegrationTexture* FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture);
     void populateCommonSettings(nrd::CommonSettings& settings);
 
+    void TransitionTexture(Falcor::ref<Falcor::Texture>& falcorTexture);
+
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
     Falcor::RenderContext* mpRenderContext; // TESTTING

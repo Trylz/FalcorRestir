@@ -4,6 +4,7 @@
 #include "Core/API/NativeHandleTraits.h"
 
 #include <slang-gfx.h>
+#include <d3d12.h>
 
 #if defined(_DEBUG)
 #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRI\\lib\\Debug\\NRI.lib")
@@ -122,6 +123,7 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     const HRESULT allocatorCreateRes =
         deviceDesc.d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mNRINativeCommandAllocator));
     NRD_ASSERT(SUCCEEDED(allocatorCreateRes));
+    mNRINativeCommandAllocator->SetName(L"NRD command allocator");
 
     commandBufferDesc.d3d12CommandAllocator = mNRINativeCommandAllocator;
 
@@ -305,6 +307,64 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
     settings.enableValidation = false;
 }
 
+struct CD3DX12_RESOURCE_BARRIER : public D3D12_RESOURCE_BARRIER
+{
+    CD3DX12_RESOURCE_BARRIER() {}
+    explicit CD3DX12_RESOURCE_BARRIER(const D3D12_RESOURCE_BARRIER& o) : D3D12_RESOURCE_BARRIER(o) {}
+    static inline CD3DX12_RESOURCE_BARRIER Transition(
+        _In_ ID3D12Resource* pResource,
+        D3D12_RESOURCE_STATES stateBefore,
+        D3D12_RESOURCE_STATES stateAfter,
+        UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+        D3D12_RESOURCE_BARRIER_FLAGS flags = D3D12_RESOURCE_BARRIER_FLAG_NONE
+    )
+    {
+        CD3DX12_RESOURCE_BARRIER result;
+        ZeroMemory(&result, sizeof(result));
+        D3D12_RESOURCE_BARRIER& barrier = result;
+        result.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        result.Flags = flags;
+        barrier.Transition.pResource = pResource;
+        barrier.Transition.StateBefore = stateBefore;
+        barrier.Transition.StateAfter = stateAfter;
+        barrier.Transition.Subresource = subresource;
+        return result;
+    }
+    static inline CD3DX12_RESOURCE_BARRIER Aliasing(_In_ ID3D12Resource* pResourceBefore, _In_ ID3D12Resource* pResourceAfter)
+    {
+        CD3DX12_RESOURCE_BARRIER result;
+        ZeroMemory(&result, sizeof(result));
+        D3D12_RESOURCE_BARRIER& barrier = result;
+        result.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
+        barrier.Aliasing.pResourceBefore = pResourceBefore;
+        barrier.Aliasing.pResourceAfter = pResourceAfter;
+        return result;
+    }
+    static inline CD3DX12_RESOURCE_BARRIER UAV(_In_ ID3D12Resource* pResource)
+    {
+        CD3DX12_RESOURCE_BARRIER result;
+        ZeroMemory(&result, sizeof(result));
+        D3D12_RESOURCE_BARRIER& barrier = result;
+        result.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = pResource;
+        return result;
+    }
+    operator const D3D12_RESOURCE_BARRIER&() const { return *this; }
+};
+
+void DenoisingPass::TransitionTexture(Falcor::ref<Falcor::Texture>& falcorTexture)
+{
+    ID3D12Resource* nativeTexture = falcorTexture->getNativeHandle().as<ID3D12Resource*>();
+
+    const CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        nativeTexture,
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+        D3D12_RESOURCE_STATE_COMMON
+    );
+
+    mNRINativeCommandList->ResourceBarrier(1, &barrier);
+}
+
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 {
     FALCOR_PROFILE(pRenderContext, "DenoisingPass::dipatchNRD");
@@ -341,8 +401,22 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
     mNRINativeCommandAllocator->Reset();
     const HRESULT hr = mNRINativeCommandList->Reset(mNRINativeCommandAllocator, nullptr);
 
+    TransitionTexture(mViewZTexture);
+    TransitionTexture(mMotionVectorTexture);
+    TransitionTexture(mNormalLinearRoughnessTexture);
+    TransitionTexture(mOuputTexture);
+    TransitionTexture(m_InColorTexture);
+
     const nrd::Identifier denoiserId = NRD_ID(RELAX_DIFFUSE);
     m_NRD->Denoise(&denoiserId, 1, *m_nriCommandBuffer, userPool);
+
+    TransitionTexture(mViewZTexture);
+    TransitionTexture(mMotionVectorTexture);
+    TransitionTexture(mNormalLinearRoughnessTexture);
+    TransitionTexture(mOuputTexture);
+    TransitionTexture(m_InColorTexture);
+
+    //---------------------------------------------------------------------------------------------------------------------------------
 
     mNRINativeCommandList->Close();
     ID3D12CommandList* ppCommandLists[] = {mNRINativeCommandList};
