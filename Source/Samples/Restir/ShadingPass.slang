@@ -73,6 +73,6 @@ void ShadingPass(uint3 threadId: SV_DispatchThreadID)
 
     outColor/= nbReservoirPerPixel;
 
-    gOutput[pixel] = float3(outColor, hitDistance);
+    gOutput[pixel] = float4(outColor, hitDistance);
 }
 
