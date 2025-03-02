@@ -100,6 +100,10 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
     m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
 }
 
+void DenoisingPass::prepareNRDInputs(Falcor::RenderContext* pRenderContext) {
+
+}
+
 void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
 {
     prepareNRDInputs(pRenderContext);
