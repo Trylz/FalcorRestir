@@ -13,6 +13,14 @@
     #pragma comment(lib, __FILE__ "\\..\\Dependencies\\NvidiaNRD\\lib\\Release\\NRD.lib")
 #endif
 
+
+#if defined _DEBUG
+    #include <cassert>
+    #define NRD_ASSERT(x) assert(x)
+#else
+    #define NRD_ASSERT(x) (x)
+#endif
+
 namespace Restir
 {
 using namespace Falcor;
@@ -133,7 +141,7 @@ void DenoisingPass::initNRD()
     // allocates resources with statically defined dimensions. DRS is only supported by adjusting the viewport
     // via "CommonSettings::rectSize"
     bool result = m_NRD->Initialize((uint16_t)mWidth, (uint16_t)mHeight, instanceCreationDesc, *m_nriDevice, m_NRI, m_NRI);
-    assert(result);
+    NRD_ASSERT(result);
 }
 
 void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
@@ -154,8 +162,6 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
     var["gNormalWs"] = GBufferSingleton::instance()->getCurrentNormalWsTexture();
 
     mpPackNRDPass->execute(pRenderContext, mWidth, mHeight);
-
-    mPreviousFrameViewProjMat = mpScene->getCamera()->getViewProjMatrix();
 }
 
 void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
@@ -173,6 +179,12 @@ void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
     packNRD(pRenderContext);
     dipatchNRD(pRenderContext);
     unpackNRD(pRenderContext);
+
+    mPreviousFrameViewMat = mpScene->getCamera()->getViewMatrix();
+    mPreviousFrameProjMat = mpScene->getCamera()->getProjMatrix();
+    mPreviousFrameViewProjMat = mpScene->getCamera()->getViewProjMatrix();
+
+    ++mFrameIndex;
 }
 
 NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture)
@@ -202,7 +214,7 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
         break;
 
     default:
-        assert(false);
+        NRD_ASSERT(false);
     }
     // Init integration texture.
     // You need to specify the current state of the resource here, after denoising NRD can modify
@@ -218,7 +230,59 @@ NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Fal
 
 void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 {
+    const auto& camera = mpScene->getCamera();
 
+    // Do we want to transpose theses???
+    memcpy(settings.viewToClipMatrix, &camera->getProjMatrix(), sizeof(settings.viewToClipMatrix));
+    memcpy(settings.viewToClipMatrixPrev, &mPreviousFrameProjMat, sizeof(settings.viewToClipMatrixPrev));
+
+    memcpy(settings.worldToViewMatrix, &camera->getViewMatrix(), sizeof(settings.worldToViewMatrix));
+    memcpy(settings.worldToViewMatrixPrev, &mPreviousFrameViewMat, sizeof(settings.worldToViewMatrixPrev));
+    //--------------------------------------------------------------------------------------------------------
+
+    settings.motionVectorScale[0] = 1.0f; 
+    settings.motionVectorScale[1] = 1.0f;
+    settings.motionVectorScale[2] = 0.0f;
+
+    settings.cameraJitter[0] = 0.0f;
+    settings.cameraJitter[1] = 0.0f;
+    settings.cameraJitterPrev[0] = 0.0f;
+    settings.cameraJitterPrev[1] = 0.0f;
+
+    settings.resourceSize[0] = (uint16_t)mWidth;
+    settings.resourceSize[1] = (uint16_t)mHeight;
+
+    settings.resourceSizePrev[0] = (uint16_t)mWidth;
+    settings.resourceSizePrev[1] = (uint16_t)mHeight;
+
+    settings.rectSize[0] = (uint16_t)((float)mWidth + 0.5f);
+    settings.rectSize[1] = (uint16_t)((float)mHeight + 0.5f);
+
+    settings.rectSizePrev[0] = (uint16_t)((float)mWidth + 0.5f);
+    settings.rectSizePrev[1] = (uint16_t)((float)mHeight + 0.5f);
+
+    settings.viewZScale = 1.0f;
+
+    settings.denoisingRange = 4.0f * mpScene->getSceneBounds().radius();
+
+    settings.disocclusionThreshold = 0.01f;
+    settings.disocclusionThresholdAlternate = 0.05f;
+
+    // settings.strandMaterialID = MATERIAL_ID_HAIR / 3.0f;
+
+    // settings.splitScreen = (m_Settings.denoiser == DENOISER_REFERENCE || m_Settings.RR) ? 1.0f : m_Settings.separator;
+    // settings.printfAt[0] = wantPrintf ? (uint16_t)ImGui::GetIO().MousePos.x : 9999;
+    // settings.printfAt[1] = wantPrintf ? (uint16_t)ImGui::GetIO().MousePos.y : 9999;
+
+#if defined(_DEBUG)
+    settings.debug = true;
+#endif
+    settings.frameIndex = mFrameIndex;
+
+    settings.accumulationMode = settings.frameIndex ? nrd::AccumulationMode::CONTINUE : nrd::AccumulationMode::RESTART;
+    settings.isMotionVectorInWorldSpace = false;
+    settings.isBaseColorMetalnessAvailable = false;
+    settings.enableValidation = false;
 }
 
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
@@ -231,7 +295,7 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 
     nrd::CommonSettings commonSettings = {};
     populateCommonSettings(commonSettings);
-    NEBULA_ASSERT(m_NRD->SetCommonSettings(commonSettings));
+    NRD_ASSERT(m_NRD->SetCommonSettings(commonSettings));
 
     nrd::RelaxSettings denoiserSettings;
     populateDenoiserSettings(denoiserSettings, denoisingArgs);

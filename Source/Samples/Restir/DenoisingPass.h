@@ -56,6 +56,8 @@ private:
     uint32_t mWidth;
     uint32_t mHeight;
 
+    uint32_t mFrameIndex = 0u;
+
     NriInterface m_NRI;
 
     nri::Device* m_nriDevice = nullptr;
@@ -69,6 +71,8 @@ private:
     Falcor::ref<Falcor::Texture> mOuputTexture;
     Falcor::ref<Falcor::Texture> m_InColorTexture;// From Shading pass.
 
+    Falcor::float4x4 mPreviousFrameViewMat;
+    Falcor::float4x4 mPreviousFrameProjMat;
     Falcor::float4x4 mPreviousFrameViewProjMat;
 
     NrdIntegrationTexture* mNRDMotionVectors;
