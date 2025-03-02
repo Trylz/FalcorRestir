@@ -15,6 +15,8 @@ ShadingPass::ShadingPass(Falcor::ref<Falcor::Device> pDevice, uint32_t width, ui
     mpOuputTexture = pDevice->createTexture2D(
         width, height, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
     );
+
+    mpOuputTexture->setName("ShadingPass ouput texture");
 }
 
 void ShadingPass::render(Falcor::RenderContext* pRenderContext, ref<Camera> pCamera)

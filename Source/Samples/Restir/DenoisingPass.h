@@ -82,5 +82,9 @@ private:
     NrdIntegrationTexture* mNRDNormalLinearRoughness;
     NrdIntegrationTexture* mInDiffuseRadianceHitTexture;
     NrdIntegrationTexture* mOutDiffuseRadianceHitTexture;
+
+    ID3D12CommandAllocator* mNRINativeCommandAllocator;
+    ID3D12CommandQueue* mNRINativeCommandQueue;
+    ID3D12GraphicsCommandList* mNRINativeCommandList;
 };
 } // namespace Restir

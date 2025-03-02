@@ -49,18 +49,22 @@ void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
     mViewZTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::R32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
+    mViewZTexture->setName("NRD_ViewZ");
 
     mMotionVectorTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RG32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
+    mMotionVectorTexture->setName("NRD_MotionVectorTexture");
 
     mNormalLinearRoughnessTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
     );
+    mNormalLinearRoughnessTexture->setName("NRD_NormalLinearRoughness");
 
     mOuputTexture = pDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
     );
+    mOuputTexture->setName("NRD_OutputTexture");
 }
 
 void DenoisingPass::createNRDIntegrationTextures()
@@ -94,7 +98,9 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
 
     gfx::InteropHandle queueHandle;
     mpDevice->getGfxCommandQueue()->getNativeHandle(&queueHandle);
-    deviceDesc.d3d12GraphicsQueue = (ID3D12CommandQueue*)queueHandle.handleValue;
+    mNRINativeCommandQueue = (ID3D12CommandQueue*)queueHandle.handleValue;
+    deviceDesc.d3d12GraphicsQueue = mNRINativeCommandQueue;
+
     deviceDesc.enableNRIValidation = false;
 
     nri::Result nriResult = nri::nriCreateDeviceFromD3D12Device(deviceDesc, m_nriDevice);
@@ -109,10 +115,15 @@ void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
 
     // Wrap the command buffer
     nri::CommandBufferD3D12Desc commandBufferDesc = {};
-    commandBufferDesc.d3d12CommandList = pRenderContext->getLowLevelData()->getCommandBufferNativeHandle().as<ID3D12GraphicsCommandList*>();
+    mNRINativeCommandList = pRenderContext->getLowLevelData()->getCommandBufferNativeHandle().as<ID3D12GraphicsCommandList*>();
+    commandBufferDesc.d3d12CommandList = mNRINativeCommandList;
 
     // Not needed for NRD integration layer, but needed for NRI validation layer
-    commandBufferDesc.d3d12CommandAllocator = nullptr; // YANN REALLY?
+    const HRESULT allocatorCreateRes =
+        deviceDesc.d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mNRINativeCommandAllocator));
+    NRD_ASSERT(SUCCEEDED(allocatorCreateRes));
+
+    commandBufferDesc.d3d12CommandAllocator = mNRINativeCommandAllocator;
 
     const nri::Result result = m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
     NRD_ASSERT(result == nri::Result::SUCCESS);
@@ -327,8 +338,15 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
         // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
     };
 
+    mNRINativeCommandAllocator->Reset();
+    const HRESULT hr = mNRINativeCommandList->Reset(mNRINativeCommandAllocator, nullptr);
+
     const nrd::Identifier denoiserId = NRD_ID(RELAX_DIFFUSE);
     m_NRD->Denoise(&denoiserId, 1, *m_nriCommandBuffer, userPool);
+
+    mNRINativeCommandList->Close();
+    ID3D12CommandList* ppCommandLists[] = {mNRINativeCommandList};
+    mNRINativeCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 }
 
 } // namespace Restir
