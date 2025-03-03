@@ -12,6 +12,8 @@
 
 namespace Restir
 {
+using namespace Falcor;
+
 // Addapted from RenderPasses\NRDPass
 class DenoisingPass
 {
@@ -40,7 +42,7 @@ private:
     void dipatchNRD(Falcor::RenderContext* pRenderContext);
     void unpackNRD(Falcor::RenderContext* pRenderContext);
 
-    void dispatch(RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc);
+    void dispatch(Falcor::RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc);
 
     void populateCommonSettings(nrd::CommonSettings& settings);
     void populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings);
