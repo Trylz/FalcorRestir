@@ -15,32 +15,27 @@ namespace Restir
 using namespace Falcor;
 
 // Addapted from RenderPasses\NRDPass
-class DenoisingPass
+struct NRDPass
 {
-public:
-    DenoisingPass(
+    NRDPass(
         Falcor::ref<Falcor::Device> pDevice,
         Falcor::RenderContext* pRenderContext,
         Falcor::ref<Falcor::Scene> pScene,
-        Falcor::ref<Falcor::Texture>& inColor,
         uint32_t width,
         uint32_t height
     );
-    ~DenoisingPass();
 
-    void render(Falcor::RenderContext* pRenderContext);
-    inline Falcor::ref<Falcor::Texture>& getOuputTexture() { return mOuputTexture; };
+    void render(Falcor::RenderContext* pRenderContext, uint32_t ReservoirIdx);
 
-private:
     void initNRD();
     void createPipelines();
     void createResources();
 
     void createFalcorTextures(Falcor::ref<Falcor::Device> pDevice);
 
-    void packNRD(Falcor::RenderContext* pRenderContext);
+    void packNRD(Falcor::RenderContext* pRenderContext, uint32_t ReservoirIdx);
     void dipatchNRD(Falcor::RenderContext* pRenderContext);
-    void unpackNRD(Falcor::RenderContext* pRenderContext);
+    void unpackNRD(Falcor::RenderContext* pRenderContext, uint32_t ReservoirIdx);
 
     void dispatch(Falcor::RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc);
 
@@ -64,9 +59,8 @@ private:
     Falcor::ref<Falcor::Texture> mViewZTexture;
     Falcor::ref<Falcor::Texture> mMotionVectorTexture;
     Falcor::ref<Falcor::Texture> mNormalLinearRoughnessTexture;
+    Falcor::ref<Falcor::Texture> mInputTexture;
     Falcor::ref<Falcor::Texture> mOuputTexture;
-
-    Falcor::ref<Falcor::Texture> m_InColorTexture; // From Shading pass.
 
     Falcor::float4x4 mPreviousFrameViewMat;
     Falcor::float4x4 mPreviousFrameProjMat;
@@ -82,5 +76,23 @@ private:
     std::vector<ref<Texture>> mpPermanentTextures;
     std::vector<ref<Texture>> mpTransientTextures;
     ref<D3D12ConstantBufferView> mpCBV;
+};
+
+class DenoisingPass
+{
+public:
+    DenoisingPass(
+        Falcor::ref<Falcor::Device> pDevice,
+        Falcor::RenderContext* pRenderContext,
+        Falcor::ref<Falcor::Scene> pScene,
+        uint32_t width,
+        uint32_t height
+    );
+    ~DenoisingPass();
+
+    void render(Falcor::RenderContext* pRenderContext);
+
+private:
+    NRDPass* mNRDPass;
 };
 } // namespace Restir
