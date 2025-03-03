@@ -436,10 +436,12 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 
     settings.motionVectorScale[0] = 1.0f;
     settings.motionVectorScale[1] = 1.0f;
-    settings.motionVectorScale[2] = 0.0f;
 
     settings.cameraJitter[0] = 0.0f;
     settings.cameraJitter[1] = 0.0f;
+
+    settings.isMotionVectorInWorldSpace = false;
+
 
     settings.denoisingRange = 4.0f * mpScene->getSceneBounds().radius();
 
