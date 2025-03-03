@@ -160,10 +160,9 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
     mpVisibilityPass = new Restir::VisibilityPass(getDevice(), mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpTemporalFilteringPass =
         new Restir::TemporalFilteringPass(getDevice(), mpScene, kSceneName, pTargetFbo->getWidth(), pTargetFbo->getHeight());
+
+    mpDenoisingPass = new Restir::DenoisingPass(getDevice(), pRenderContext, mpScene, pTargetFbo->getWidth(), pTargetFbo->getHeight());
     mpShadingPass = new Restir::ShadingPass(getDevice(), pTargetFbo->getWidth(), pTargetFbo->getHeight());
-    mpDenoisingPass = new Restir::DenoisingPass(
-        getDevice(), pRenderContext, mpScene, mpShadingPass->getOuputTexture(), pTargetFbo->getWidth(), pTargetFbo->getHeight()
-    );
 }
 
 void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo)
@@ -182,10 +181,10 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
     mpRISPass->render(pRenderContext, mpCamera);
     mpVisibilityPass->render(pRenderContext);
     mpTemporalFilteringPass->render(pRenderContext, mpCamera);
-    mpShadingPass->render(pRenderContext, mpCamera);
     mpDenoisingPass->render(pRenderContext);
+    mpShadingPass->render(pRenderContext, mpCamera);
 
-    pRenderContext->blit(mpDenoisingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
+    pRenderContext->blit(mpShadingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
 
     Restir::GBufferSingleton::instance()->setNextFrame();
     Restir::ReservoirManagerSingleton::instance()->setNextFrame();

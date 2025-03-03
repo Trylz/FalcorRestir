@@ -21,12 +21,11 @@ struct NRDPass
         Falcor::ref<Falcor::Device> pDevice,
         Falcor::RenderContext* pRenderContext,
         Falcor::ref<Falcor::Scene> pScene,
-        uint32_t reservoirIndex,
         uint32_t width,
         uint32_t height
     );
 
-    void render(Falcor::RenderContext* pRenderContext);
+    void render(Falcor::RenderContext* pRenderContext, uint32_t ReservoirIdx);
 
     void initNRD();
     void createPipelines();
@@ -34,16 +33,14 @@ struct NRDPass
 
     void createFalcorTextures(Falcor::ref<Falcor::Device> pDevice);
 
-    void packNRD(Falcor::RenderContext* pRenderContext);
+    void packNRD(Falcor::RenderContext* pRenderContext, uint32_t ReservoirIdx);
     void dipatchNRD(Falcor::RenderContext* pRenderContext);
-    void unpackNRD(Falcor::RenderContext* pRenderContext);
+    void unpackNRD(Falcor::RenderContext* pRenderContext, uint32_t ReservoirIdx);
 
     void dispatch(Falcor::RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc);
 
     void populateCommonSettings(nrd::CommonSettings& settings);
     void populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings);
-
-    uint32_t mReservoirIdx = 0u;
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
@@ -88,13 +85,14 @@ public:
         Falcor::ref<Falcor::Device> pDevice,
         Falcor::RenderContext* pRenderContext,
         Falcor::ref<Falcor::Scene> pScene,
-        Falcor::ref<Falcor::Texture>& inColor,
         uint32_t width,
         uint32_t height
     );
     ~DenoisingPass();
 
+    void render(Falcor::RenderContext* pRenderContext);
+
 private:
-    std::vector<NRDPass*> mNRDPasses;
+    NRDPass* mNRDPass;
 };
 } // namespace Restir

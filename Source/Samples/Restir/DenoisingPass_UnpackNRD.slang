@@ -4,9 +4,12 @@
 cbuffer PerFrameCB
 {
     uint2 viewportDims;
+    uint nbReservoirPerPixel;
+    uint reservoirIndex;
 };
 
-RWTexture2D<float4> gInOutOutput;
+RWStructuredBuffer<RestirReservoir> gReservoirs;
+Texture2D<float4> gNRDOuputTexture;
 
 [numthreads(16, 16, 1)] void UnpackNRD(uint3 threadId
                                        : SV_DispatchThreadID)
@@ -15,7 +18,13 @@ RWTexture2D<float4> gInOutOutput;
     if (any(pixel >= viewportDims))
         return;
 
-    gInOutOutput[pixel] = RELAX_BackEnd_UnpackRadiance(gInOutOutput[pixel]);
+    const uint pixelLinearIndex = pixel.y * viewportDims.x + pixel.x;
+    const size_t reservoirsStart = pixelLinearIndex * nbReservoirPerPixel;
+
+    RestirReservoir r = gReservoirs[reservoirsStart + reservoirIndex];
+    r.mY.mIncomingRadiance = RELAX_BackEnd_UnpackRadiance(gNRDOuputTexture[pixel]);
+
+    gReservoirs[pixel] = r;
 
 }
 

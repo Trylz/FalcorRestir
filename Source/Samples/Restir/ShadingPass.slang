@@ -62,17 +62,14 @@ void ShadingPass(uint3 threadId: SV_DispatchThreadID)
 
     float3 outColor = float3(0.0f, 0.0f, 0.0f);
 
-    float hitDistance = 1e8f;
     for (uint i = 0; i <nbReservoirPerPixel; ++i)
     {
         const RestirReservoir r = gReservoirs[reservoirsStart + i];
         outColor += computeColor(r, pixel, P, N, V, diffuse, specular, roughness);
-
-        hitDistance = min(hitDistance, r.m_hitDistance);
     }
 
     outColor/= nbReservoirPerPixel;
 
-    gOutput[pixel] = float4(outColor, hitDistance);
+    gOutput[pixel] = float4(outColor, 1.0f);
 }
 

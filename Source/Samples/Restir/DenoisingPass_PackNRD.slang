@@ -6,7 +6,11 @@ cbuffer PerFrameCB
     uint2 viewportDims;
     float4x4 viewMat;
     float4x4 previousFrameViewProjMat;
+    uint nbReservoirPerPixel;
+    uint reservoirIndex;
 };
+
+StructuredBuffer<RestirReservoir> gReservoirs;
 
 RWTexture2D<float4> gRadianceHit;
 RWTexture2D<float4> gNormalLinearRoughness;
@@ -33,8 +37,12 @@ void PackNRD(uint3 threadId: SV_DispatchThreadID)
     if (any(pixel >= viewportDims))
         return;
 
+    const uint pixelLinearIndex = pixel.y * viewportDims.x + pixel.x;
+    const size_t reservoirsStart = pixelLinearIndex * nbReservoirPerPixel;
+
     // Radiance hit
-    gRadianceHit[pixel] = RELAX_FrontEnd_PackRadianceAndHitDist(gRadianceHit[pixel].xyz, gRadianceHit[pixel].w, true);
+    const RestirReservoir r = gReservoirs[reservoirsStart + reservoirIndex];
+    gRadianceHit[pixel] = RELAX_FrontEnd_PackRadianceAndHitDist(r.mY.mIncomingRadiance, r.m_hitDistance, true);
 
     // Normal roughness
     gNormalLinearRoughness[pixel] = NRD_FrontEnd_PackNormalAndRoughness(gNormalWs[pixel].xyz, gNormalWs[pixel].w, gAlbedo[pixel].w);
