@@ -14,7 +14,7 @@ FALCOR_EXPORT_D3D12_AGILITY_SDK
 // THE SCENE WE USE.
 #define SCENE_NAME 0
 
-#if SCENE_NAME == 2
+#if SCENE_NAME == 0
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
 static const Restir::SceneName kSceneName = Restir::SceneName::Arcade;
 #elif SCENE_NAME == 1
@@ -129,7 +129,7 @@ void RestirApp::loadScene(const std::string& path, const Fbo* pTargetFbo, Render
     {
     case Restir::SceneName::Arcade:
         Restir::SceneSettingsSingleton::instance()->RISSamplesCount = 4;
-        Restir::SceneSettingsSingleton::instance()->nbReservoirPerPixel = 2;
+        Restir::SceneSettingsSingleton::instance()->nbReservoirPerPixel = 1;
         Restir::SceneSettingsSingleton::instance()->shadingLightExponent = 3.0f;
         break;
 
