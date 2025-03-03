@@ -1,7 +1,8 @@
 add_falcor_executable(Restir)
 
 target_sources(Restir PRIVATE
-	DenoisingPass.h
+    CudaUtils.h
+    DenoisingPass.h
     GBuffer.h
     LightManager.h
     ReservoirManager.h
@@ -14,6 +15,7 @@ target_sources(Restir PRIVATE
     TemporalFilteringPass.h    
     VisibilityPass.h
 
+    CudaUtils.cpp
 	DenoisingPass.cpp
     FloatRandomNumberGenerator.h
     GBuffer.cpp
