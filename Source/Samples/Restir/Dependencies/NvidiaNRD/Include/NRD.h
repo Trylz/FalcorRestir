@@ -11,15 +11,18 @@ license agreement from NVIDIA CORPORATION is strictly prohibited.
 /*
 CREDITS:
     Developed by:
-        Dmitrii Zhdan (dzhdan@nvidia.com)
-        Tim Cheblokov (ttcheblokov@nvidia.com)
+        Library, REBLUR and SIGMA denoisers:
+            Dmitry Zhdan (dzhdan@nvidia.com)
+
+        ReLAX denoiser:
+            Tim Cheblokov (ttcheblokov@nvidia.com)
+            Pawel Kozlowski (pkozlowski@nvidia.com)
 
     Special thanks:
-        Pawel Kozlowski (NVIDIA)
-        Evgeny Makarov (NVIDIA)
-        Ivan Fedorov (NVIDIA)
-        Ivan Povarov (NVIDIA)
-        Oles Shyshkovtsov (4A GAMES) for initial idea of recurrent blurring
+        Evgeny Makarov (NVIDIA) - denoising ideas
+        Ivan Fedorov (NVIDIA) - interface
+        Ivan Povarov (NVIDIA) - QA, integrations and feedback
+        Oles Shyshkovtsov (4A GAMES) - initial idea of recurrent blurring
 */
 
 #pragma once
@@ -27,26 +30,25 @@ CREDITS:
 #include <cstdint>
 #include <cstddef>
 
-#define NRD_VERSION_MAJOR 4
-#define NRD_VERSION_MINOR 9
-#define NRD_VERSION_BUILD 2
-#define NRD_VERSION_DATE "23 August 2024"
+#define NRD_VERSION_MAJOR 3
+#define NRD_VERSION_MINOR 1
+#define NRD_VERSION_BUILD 0
+#define NRD_VERSION_DATE "25 March 2022"
 
 #if defined(_MSC_VER)
-#define NRD_CALL __fastcall
-#elif !defined(__aarch64__) && !defined(__x86_64) && (defined(__GNUC__) || defined(__clang__))
-#define NRD_CALL __attribute__((fastcall))
+    #define NRD_CALL __fastcall
+#elif !defined(__aarch64__) && !defined(__x86_64) && (defined(__GNUC__)  || defined (__clang__))
+    #define NRD_CALL __attribute__((fastcall))
 #else
-#define NRD_CALL
+    #define NRD_CALL
 #endif
 
 #ifndef NRD_API
-#ifdef NRD_STATIC_LIBRARY
-#define NRD_API
-#else
-// #define NRD_API extern "C"
-#define NRD_API
-#endif
+    #if NRD_STATIC_LIBRARY
+        #define NRD_API
+    #else
+        #define NRD_API extern "C"
+    #endif
 #endif
 
 #include "NRDDescs.h"
@@ -54,31 +56,10 @@ CREDITS:
 
 namespace nrd
 {
-// Create and destroy
-NRD_API Result NRD_CALL CreateInstance(const InstanceCreationDesc& instanceCreationDesc, Instance*& instance);
-NRD_API void NRD_CALL DestroyInstance(Instance& instance);
-
-// Get
-NRD_API const LibraryDesc& NRD_CALL GetLibraryDesc();
-NRD_API const InstanceDesc& NRD_CALL GetInstanceDesc(const Instance& instance);
-
-// Typically needs to be called once per frame
-NRD_API Result NRD_CALL SetCommonSettings(Instance& instance, const CommonSettings& commonSettings);
-
-// Typically needs to be called at least once per denoiser (not necessarily on each frame)
-NRD_API Result NRD_CALL SetDenoiserSettings(Instance& instance, Identifier identifier, const void* denoiserSettings);
-
-// Retrieves dispatches for the list of identifiers (if they are parts of the instance)
-// IMPORTANT: returned memory is owned by the "instance" and will be overwritten by the next "GetComputeDispatches" call
-NRD_API Result NRD_CALL GetComputeDispatches(
-    Instance& instance,
-    const Identifier* identifiers,
-    uint32_t identifiersNum,
-    const DispatchDesc*& dispatchDescs,
-    uint32_t& dispatchDescsNum
-);
-
-// Helpers
-NRD_API const char* GetResourceTypeString(ResourceType resourceType);
-NRD_API const char* GetDenoiserString(Denoiser denoiser);
-} // namespace nrd
+    NRD_API const LibraryDesc& NRD_CALL GetLibraryDesc();
+    NRD_API Result NRD_CALL CreateDenoiser(const DenoiserCreationDesc& denoiserCreationDesc, Denoiser*& denoiser);
+    NRD_API const DenoiserDesc& NRD_CALL GetDenoiserDesc(const Denoiser& denoiser);
+    NRD_API Result NRD_CALL SetMethodSettings(Denoiser& denoiser, Method method, const void* methodSettings);
+    NRD_API Result NRD_CALL GetComputeDispatches(Denoiser& denoiser, const CommonSettings& commonSettings, const DispatchDesc*& dispatchDescs, uint32_t& dispatchDescNum);
+    NRD_API void NRD_CALL DestroyDenoiser(Denoiser& denoiser);
+}
