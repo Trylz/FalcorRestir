@@ -22,15 +22,15 @@ namespace Restir
 {
 using namespace Falcor;
 
-DenoisingPass::DenoisingPass(
+NRDPass::NRDPass(
     Falcor::ref<Falcor::Device> pDevice,
     Falcor::RenderContext* pRenderContext,
     Falcor::ref<Falcor::Scene> pScene,
-    Falcor::ref<Falcor::Texture>& inColor,
+    uint32_t reservoirIndex,
     uint32_t width,
     uint32_t height
 )
-    : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height), m_InColorTexture(inColor)
+    : mReservoirIdx(reservoirIndex), mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height)
 {
     mpDevice->requireD3D12();
 
@@ -159,7 +159,7 @@ static void copyMatrix(float* dstMatrix, const float4x4& srcMatrix)
     memcpy(dstMatrix, static_cast<const float*>(col_major.data()), sizeof(float4x4));
 }
 
-void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
+void NRDPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
 {
     mViewZTexture = mpDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::R32Float, 1, 1, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
@@ -176,17 +176,18 @@ void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
     );
     mNormalLinearRoughnessTexture->setName("NRD_NormalLinearRoughness");
 
+    mInputTexture = pDevice->createTexture2D(
+        mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
+    );
+    mInputTexture->setName("NRD_InputTexture");
+
     mOuputTexture = pDevice->createTexture2D(
         mWidth, mHeight, ResourceFormat::RGBA32Float, 1, 1, nullptr, ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
     );
     mOuputTexture->setName("NRD_OutputTexture");
 }
 
-DenoisingPass::~DenoisingPass()
-{
-}
-
-void DenoisingPass::initNRD()
+void NRDPass::initNRD()
 {
     mpDenoiser = nullptr;
 
@@ -210,7 +211,7 @@ void DenoisingPass::initNRD()
     createPipelines();
 }
 
-void DenoisingPass::createPipelines()
+void NRDPass::createPipelines()
 {
     mpPasses.clear();
     mpCachedProgramKernels.clear();
@@ -304,7 +305,7 @@ void DenoisingPass::createPipelines()
     }
 }
 
-void DenoisingPass::createResources()
+void NRDPass::createResources()
 {
     // Destroy previously created resources.
     mpSamplers.clear();
@@ -370,7 +371,7 @@ void DenoisingPass::createResources()
     }
 }
 
-void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
+void NRDPass::packNRD(Falcor::RenderContext* pRenderContext)
 {
     FALCOR_PROFILE(pRenderContext, "DenoisingPass::packNRD");
 
@@ -392,7 +393,7 @@ void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)
     mpPackNRDPass->execute(pRenderContext, mWidth, mHeight);
 }
 
-void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
+void NRDPass::unpackNRD(Falcor::RenderContext* pRenderContext)
 {
     FALCOR_PROFILE(pRenderContext, "DenoisingPass::unpackNRD");
 
@@ -404,7 +405,7 @@ void DenoisingPass::unpackNRD(Falcor::RenderContext* pRenderContext)
     mpUnpackNRDPass->execute(pRenderContext, mWidth, mHeight);
 }
 
-void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
+void NRDPass::render(Falcor::RenderContext* pRenderContext)
 {
     NRD_ASSERT(pRenderContext == mpRenderContext);
 
@@ -421,7 +422,7 @@ void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
     ++mFrameIndex;
 }
 
-void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
+void NRDPass::populateCommonSettings(nrd::CommonSettings& settings)
 {
     const auto& camera = mpScene->getCamera();
 
@@ -442,7 +443,6 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 
     settings.isMotionVectorInWorldSpace = false;
 
-
     settings.denoisingRange = 4.0f * mpScene->getSceneBounds().radius();
 
     settings.disocclusionThreshold = 0.01f;
@@ -452,12 +452,9 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
     settings.accumulationMode = mFrameIndex ? nrd::AccumulationMode::CONTINUE : nrd::AccumulationMode::RESTART;
 }
 
+void NRDPass::populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings) {}
 
-void DenoisingPass::populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings)
-{
-}
-
-void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
+void NRDPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 {
     FALCOR_PROFILE(pRenderContext, "DenoisingPass::dipatchNRD");
 
@@ -484,7 +481,7 @@ void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
     pRenderContext->submit();
 }
 
-void DenoisingPass::dispatch(RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc)
+void NRDPass::dispatch(RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc)
 {
     const nrd::DenoiserDesc& denoiserDesc = nrd::GetDenoiserDesc(*mpDenoiser);
     const nrd::PipelineDesc& pipelineDesc = denoiserDesc.pipelines[dispatchDesc.pipelineIndex];
@@ -617,6 +614,5 @@ void DenoisingPass::dispatch(RenderContext* pRenderContext, const nrd::DispatchD
 
     mpDevice->getUploadHeap()->release(cbAllocation);
 }
-
 
 } // namespace Restir
