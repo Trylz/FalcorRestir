@@ -33,7 +33,6 @@
 #include "Core/API/Device.h"
 #include "Core/API/Fence.h"
 #include "Dependencies/NvidiaCuda/include/cuda.h"
-#include "Dependencies/NvidiaCuda/include/cuda_runtime_api.h"
 #include "CudaRuntime.h" // Instead of <cuda_runtime.h> to avoid name clashes.
 
 #include <vector>

@@ -47,7 +47,7 @@
 #define float3 cuda_float3
 #define float4 cuda_float4
 
-#include "Dependencies/NvidiaCuda/include/cuda_runtime_api.h"
+#include <cuda_runtime.h>
 
 #undef int1
 #undef int2
