@@ -12,7 +12,7 @@
 FALCOR_EXPORT_D3D12_AGILITY_SDK
 
 // THE SCENE WE USE.
-#define SCENE_NAME 1
+#define SCENE_NAME 3
 
 #if SCENE_NAME == 0
 static const std::string kScenePath = "Arcade/Arcade.pyscene";
@@ -183,9 +183,9 @@ void RestirApp::render(RenderContext* pRenderContext, const ref<Fbo>& pTargetFbo
     mpVisibilityPass->render(pRenderContext);
     mpTemporalFilteringPass->render(pRenderContext, mpCamera);
     mpShadingPass->render(pRenderContext, mpCamera);
-    mpDenoisingPass->render(pRenderContext);
+    //mpDenoisingPass->render(pRenderContext);
 
-    pRenderContext->blit(mpDenoisingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
+    pRenderContext->blit(mpShadingPass->getOuputTexture()->getSRV(), pTargetFbo->getRenderTargetView(0));
 
     Restir::GBufferSingleton::instance()->setNextFrame();
     Restir::ReservoirManagerSingleton::instance()->setNextFrame();
