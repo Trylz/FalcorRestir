@@ -33,14 +33,16 @@ DenoisingPass::DenoisingPass(
 )
     : mpDevice(pDevice), mpScene(pScene), mpRenderContext(pRenderContext), mWidth(width), mHeight(height), m_InColorTexture(inColor)
 {
-    initNRI(pRenderContext);
-    initNRD();
+    mpDevice->requireD3D12();
+
+    DefineList definesRelax;
+    definesRelax.add("NRD_USE_OCT_NORMAL_ENCODING", "1");
+    definesRelax.add("NRD_USE_MATERIAL_ID", "0");
+    definesRelax.add("NRD_METHOD", "0"); // NRD_METHOD_RELAX_DIFFUSE_SPECULAR
+    mpPackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_PackNRD.slang", "PackNRD", definesRelax);
+    mpUnpackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_UnpackNRD.slang", "UnpackNRD", definesRelax);
 
     createFalcorTextures(pDevice);
-    createNRDIntegrationTextures();
-
-    mpPackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_PackNRD.slang", "PackNRD");
-    mpUnpackNRDPass = ComputePass::create(pDevice, "Samples/Restir/DenoisingPass_UnpackNRD.slang", "UnpackNRD");
 }
 
 void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
@@ -66,15 +68,6 @@ void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
     mOuputTexture->setName("NRD_OutputTexture");
 }
 
-void DenoisingPass::createNRDIntegrationTextures()
-{
-    mNRDMotionVectors = FalcorTexture_to_NRDIntegrationTexture(mMotionVectorTexture);
-    mNRDViewZ = FalcorTexture_to_NRDIntegrationTexture(mViewZTexture);
-    mNRDNormalLinearRoughness = FalcorTexture_to_NRDIntegrationTexture(mNormalLinearRoughnessTexture);
-    mInDiffuseRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(m_InColorTexture);
-    mOutDiffuseRadianceHitTexture = FalcorTexture_to_NRDIntegrationTexture(mOuputTexture);
-}
-
 DenoisingPass::~DenoisingPass()
 {
     delete mNRDMotionVectors;
@@ -90,64 +83,44 @@ DenoisingPass::~DenoisingPass()
     delete m_NRD;
 }
 
-void DenoisingPass::initNRI(Falcor::RenderContext* pRenderContext)
+
+static void* nrdAllocate(void* userArg, size_t size, size_t alignment)
 {
-    nri::DeviceCreationD3D12Desc deviceDesc = {};
-    deviceDesc.d3d12Device = mpDevice->getNativeHandle().as<ID3D12Device*>();
-
-    gfx::InteropHandle queueHandle;
-    mpDevice->getGfxCommandQueue()->getNativeHandle(&queueHandle);
-    mNRINativeCommandQueue = (ID3D12CommandQueue*)queueHandle.handleValue;
-    deviceDesc.d3d12GraphicsQueue = mNRINativeCommandQueue;
-
-    deviceDesc.enableNRIValidation = false;
-
-    nri::Result nriResult = nri::nriCreateDeviceFromD3D12Device(deviceDesc, m_nriDevice);
-
-    // Get core functionality
-    nriResult = nri::nriGetInterface(*m_nriDevice, NRI_INTERFACE(nri::CoreInterface), (nri::CoreInterface*)&m_NRI);
-
-    nriResult = nri::nriGetInterface(*m_nriDevice, NRI_INTERFACE(nri::HelperInterface), (nri::HelperInterface*)&m_NRI);
-
-    // Get appropriate "wrapper" extension (XXX - can be D3D11, D3D12 or VULKAN)
-    nriResult = nri::nriGetInterface(*m_nriDevice, NRI_INTERFACE(nri::WrapperD3D12Interface), (nri::WrapperD3D12Interface*)&m_NRI);
-
-    // Wrap the command buffer
-    nri::CommandBufferD3D12Desc commandBufferDesc = {};
-    mNRINativeCommandList = pRenderContext->getLowLevelData()->getCommandBufferNativeHandle().as<ID3D12GraphicsCommandList*>();
-    commandBufferDesc.d3d12CommandList = mNRINativeCommandList;
-
-    // Not needed for NRD integration layer, but needed for NRI validation layer
-    const HRESULT allocatorCreateRes =
-        deviceDesc.d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mNRINativeCommandAllocator));
-    NRD_ASSERT(SUCCEEDED(allocatorCreateRes));
-    mNRINativeCommandAllocator->SetName(L"NRD command allocator");
-
-    commandBufferDesc.d3d12CommandAllocator = mNRINativeCommandAllocator;
-
-    const nri::Result result = m_NRI.CreateCommandBufferD3D12(*m_nriDevice, commandBufferDesc, m_nriCommandBuffer);
-    NRD_ASSERT(result == nri::Result::SUCCESS);
+    return malloc(size);
 }
 
-#define NRD_ID(x) nrd::Identifier(nrd::Denoiser::x)
+static void* nrdReallocate(void* userArg, void* memory, size_t size, size_t alignment)
+{
+    return realloc(memory, size);
+}
+
+static void nrdFree(void* userArg, void* memory)
+{
+    free(memory);
+}
 
 void DenoisingPass::initNRD()
 {
-    m_NRD = new NrdIntegration(1, false, "DenoisingPass NrdIntegration");
+    mpDenoiser = nullptr;
 
-    const nrd::DenoiserDesc denoiserDescs[] = {
-        {NRD_ID(RELAX_DIFFUSE), nrd::Denoiser::RELAX_DIFFUSE},
-    };
+    const nrd::LibraryDesc& libraryDesc = nrd::GetLibraryDesc();
 
-    nrd::InstanceCreationDesc instanceCreationDesc = {};
-    instanceCreationDesc.denoisers = denoiserDescs;
-    instanceCreationDesc.denoisersNum = _countof(denoiserDescs);
+    const nrd::MethodDesc methods[] = {{nrd::Method::RELAX_DIFFUSE, uint16_t(mWidth), uint16_t(mHeight)}};
 
-    // NRD itself is flexible and supports any kind of dynamic resolution scaling, but NRD INTEGRATION pre-
-    // allocates resources with statically defined dimensions. DRS is only supported by adjusting the viewport
-    // via "CommonSettings::rectSize"
-    const bool result = m_NRD->Initialize((uint16_t)mWidth, (uint16_t)mHeight, instanceCreationDesc, *m_nriDevice, m_NRI, m_NRI);
-    NRD_ASSERT(result);
+    nrd::DenoiserCreationDesc denoiserCreationDesc;
+    denoiserCreationDesc.memoryAllocatorInterface.Allocate = nrdAllocate;
+    denoiserCreationDesc.memoryAllocatorInterface.Reallocate = nrdReallocate;
+    denoiserCreationDesc.memoryAllocatorInterface.Free = nrdFree;
+    denoiserCreationDesc.requestedMethodNum = 1;
+    denoiserCreationDesc.requestedMethods = methods;
+
+    nrd::Result res = nrd::CreateDenoiser(denoiserCreationDesc, mpDenoiser);
+
+    if (res != nrd::Result::SUCCESS)
+        FALCOR_THROW("NRDPass: Failed to create NRD denoiser");
+
+    createResources();
+    createPipelines();
 }
 
 void DenoisingPass::packNRD(Falcor::RenderContext* pRenderContext)

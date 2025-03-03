@@ -2,22 +2,17 @@
 
 #include "Falcor.h"
 
-#include "Dependencies/NvidiaNRI/Include/NRIDescs.h"
-#include "Dependencies/NvidiaNRI/Include/NRI.h"
-
-#include "Dependencies/NvidiaNRI/Include/Extensions/NRIWrapperD3D12.h"
-#include "Dependencies/NvidiaNRI/Include/Extensions/NRIHelper.h"
+#include "Core/Enum.h"
+#include "Core/API/Shared/D3D12DescriptorSet.h"
+#include "Core/API/Shared/D3D12RootSignature.h"
+#include "Core/API/Shared/D3D12ConstantBufferView.h"
+#include "RenderGraph/RenderPassHelpers.h"
 
 #include "Dependencies/NvidiaNRD/Include/NRD.h"
 
-class NrdIntegration;
-struct NrdIntegrationTexture;
-
 namespace Restir
 {
-struct NriInterface : public nri::CoreInterface, public nri::HelperInterface, public nri::WrapperD3D12Interface
-{};
-
+// Addapted from RenderPasses\NRDPass
 class DenoisingPass
 {
 public:
@@ -35,10 +30,11 @@ public:
     inline Falcor::ref<Falcor::Texture>& getOuputTexture() { return mOuputTexture; };
 
 private:
-    void initNRI(Falcor::RenderContext* pRenderContext);
     void initNRD();
+    void createPipelines();
+    void createResources();
+
     void createFalcorTextures(Falcor::ref<Falcor::Device> pDevice);
-    void createNRDIntegrationTextures();
 
     void packNRD(Falcor::RenderContext* pRenderContext);
     void dipatchNRD(Falcor::RenderContext* pRenderContext);
@@ -46,8 +42,6 @@ private:
 
     NrdIntegrationTexture* FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture);
     void populateCommonSettings(nrd::CommonSettings& settings);
-
-    void TransitionTextureToCommon(Falcor::ref<Falcor::Texture>& falcorTexture);
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;
@@ -61,12 +55,7 @@ private:
 
     uint32_t mFrameIndex = 0u;
 
-    NriInterface m_NRI;
-
-    nri::Device* m_nriDevice = nullptr;
-    nri::CommandBuffer* m_nriCommandBuffer = nullptr;
-
-    NrdIntegration* m_NRD = nullptr;
+    nrd::Denoiser* mpDenoiser = nullptr;
 
     Falcor::ref<Falcor::Texture> mViewZTexture;
     Falcor::ref<Falcor::Texture> mMotionVectorTexture;
@@ -79,14 +68,15 @@ private:
     Falcor::float4x4 mPreviousFrameProjMat;
     Falcor::float4x4 mPreviousFrameViewProjMat;
 
-    NrdIntegrationTexture* mNRDMotionVectors;
-    NrdIntegrationTexture* mNRDViewZ;
-    NrdIntegrationTexture* mNRDNormalLinearRoughness;
-    NrdIntegrationTexture* mInDiffuseRadianceHitTexture;
-    NrdIntegrationTexture* mOutDiffuseRadianceHitTexture;
-
-    ID3D12CommandAllocator* mNRINativeCommandAllocator;
-    ID3D12CommandQueue* mNRINativeCommandQueue;
-    ID3D12GraphicsCommandList* mNRINativeCommandList;
+    std::vector<ref<Sampler>> mpSamplers;
+    std::vector<D3D12DescriptorSetLayout> mCBVSRVUAVdescriptorSetLayouts;
+    ref<D3D12DescriptorSet> mpSamplersDescriptorSet;
+    std::vector<ref<D3D12RootSignature>> mpRootSignatures;
+    std::vector<ref<ComputePass>> mpPasses;
+    std::vector<ref<const ProgramKernels>> mpCachedProgramKernels;
+    std::vector<ref<ComputeStateObject>> mpCSOs;
+    std::vector<ref<Texture>> mpPermanentTextures;
+    std::vector<ref<Texture>> mpTransientTextures;
+    ref<D3D12ConstantBufferView> mpCBV;
 };
 } // namespace Restir
