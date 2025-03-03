@@ -42,7 +42,6 @@ private:
 
     void dispatch(RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc);
 
-
     void populateCommonSettings(nrd::CommonSettings& settings);
     void populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings);
 

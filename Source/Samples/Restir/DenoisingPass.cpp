@@ -529,40 +529,19 @@ void DenoisingPass::dispatch(RenderContext* pRenderContext, const nrd::DispatchD
             switch (resource.type)
             {
             case nrd::ResourceType::IN_MV:
-                texture = renderData.getTexture(kInputMotionVectors);
+                texture = mMotionVectorTexture;
                 break;
             case nrd::ResourceType::IN_NORMAL_ROUGHNESS:
-                texture = renderData.getTexture(kInputNormalRoughnessMaterialID);
+                texture = mNormalLinearRoughnessTexture;
                 break;
             case nrd::ResourceType::IN_VIEWZ:
-                texture = renderData.getTexture(kInputViewZ);
+                texture = mViewZTexture;
                 break;
             case nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST:
-                texture = renderData.getTexture(kInputDiffuseRadianceHitDist);
-                break;
-            case nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST:
-                texture = renderData.getTexture(kInputSpecularRadianceHitDist);
-                break;
-            case nrd::ResourceType::IN_SPEC_HITDIST:
-                texture = renderData.getTexture(kInputSpecularHitDist);
-                break;
-            case nrd::ResourceType::IN_DELTA_PRIMARY_POS:
-                texture = renderData.getTexture(kInputDeltaPrimaryPosW);
-                break;
-            case nrd::ResourceType::IN_DELTA_SECONDARY_POS:
-                texture = renderData.getTexture(kInputDeltaSecondaryPosW);
+                texture = m_InColorTexture;
                 break;
             case nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST:
-                texture = renderData.getTexture(kOutputFilteredDiffuseRadianceHitDist);
-                break;
-            case nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST:
-                texture = renderData.getTexture(kOutputFilteredSpecularRadianceHitDist);
-                break;
-            case nrd::ResourceType::OUT_REFLECTION_MV:
-                texture = renderData.getTexture(kOutputReflectionMotionVectors);
-                break;
-            case nrd::ResourceType::OUT_DELTA_MV:
-                texture = renderData.getTexture(kOutputDeltaMotionVectors);
+                texture = mOuputTexture;
                 break;
             case nrd::ResourceType::TRANSIENT_POOL:
                 texture = mpTransientTextures[resource.indexInPool];
