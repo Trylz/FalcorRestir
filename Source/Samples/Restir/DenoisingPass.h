@@ -40,8 +40,11 @@ private:
     void dipatchNRD(Falcor::RenderContext* pRenderContext);
     void unpackNRD(Falcor::RenderContext* pRenderContext);
 
-    NrdIntegrationTexture* FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture);
+    void dispatch(RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc);
+
+
     void populateCommonSettings(nrd::CommonSettings& settings);
+    void populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings);
 
     Falcor::ref<Falcor::Device> mpDevice;
     Falcor::ref<Falcor::Scene> mpScene;

@@ -185,19 +185,7 @@ void DenoisingPass::createFalcorTextures(Falcor::ref<Falcor::Device> pDevice)
 
 DenoisingPass::~DenoisingPass()
 {
-    delete mNRDMotionVectors;
-    delete mNRDViewZ;
-    delete mNRDNormalLinearRoughness;
-    delete mInDiffuseRadianceHitTexture;
-    delete mOutDiffuseRadianceHitTexture;
-
-    m_NRI.DestroyCommandBuffer(*m_nriCommandBuffer);
-    nri::nriDestroyDevice(*m_nriDevice);
-
-    m_NRD->Destroy();
-    delete m_NRD;
 }
-
 
 void DenoisingPass::initNRD()
 {
@@ -434,65 +422,17 @@ void DenoisingPass::render(Falcor::RenderContext* pRenderContext)
     ++mFrameIndex;
 }
 
-NrdIntegrationTexture* DenoisingPass::FalcorTexture_to_NRDIntegrationTexture(Falcor::ref<Falcor::Texture>& falcorTexture)
-{
-    NrdIntegrationTexture* Out_IntegrationTexture = new NrdIntegrationTexture();
-
-    // Create integration texture.
-    Out_IntegrationTexture->state = new nri::TextureBarrierDesc();
-    nri::TextureD3D12Desc textureDesc = {};
-    textureDesc.d3d12Resource = falcorTexture->getNativeHandle().as<ID3D12Resource*>();
-
-    const nri::Result result = m_NRI.CreateTextureD3D12(*m_nriDevice, textureDesc, (nri::Texture*&)Out_IntegrationTexture->state->texture);
-    NRD_ASSERT(result == nri::Result::SUCCESS);
-
-    D3D12_RESOURCE_DESC resDesc = textureDesc.d3d12Resource->GetDesc();
-    switch (resDesc.Format)
-    {
-    case DXGI_FORMAT_R32G32B32A32_FLOAT:
-        Out_IntegrationTexture->format = nri::Format::RGBA32_SFLOAT;
-        break;
-
-    case DXGI_FORMAT_R32G32B32_FLOAT:
-        Out_IntegrationTexture->format = nri::Format::RGB32_SFLOAT;
-        break;
-
-    case DXGI_FORMAT_R32G32_FLOAT:
-        Out_IntegrationTexture->format = nri::Format::RG32_SFLOAT;
-        break;
-
-    case DXGI_FORMAT_R32_FLOAT:
-        Out_IntegrationTexture->format = nri::Format::R32_SFLOAT;
-        break;
-
-    default:
-        NRD_ASSERT(false);
-    }
-    // Init integration texture.
-    // You need to specify the current state of the resource here, after denoising NRD can modify
-    // this state. Application must continue state tracking from this point.
-    // Useful information:
-    //    SRV = nri::AccessBits::SHADER_RESOURCE, nri::TextureLayout::SHADER_RESOURCE
-    //    UAV = nri::AccessBits::SHADER_RESOURCE_STORAGE, nri::TextureLayout::GENERAL
-    // entryDesc.nextState.accessBits = ConvertResourceStateToAccessBits(myResource->GetCurrentState());
-    // entryDesc.nextState.layout = ConvertResourceStateToLayout(myResource->GetCurrentState());
-
-    return Out_IntegrationTexture;
-}
-
 void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 {
     const auto& camera = mpScene->getCamera();
 
-    // YANN:Do we want to transpose theses???
     const Falcor::float4x4 currProjMatrix = camera->getProjMatrix();
-
-    memcpy(settings.viewToClipMatrix, &currProjMatrix, sizeof(settings.viewToClipMatrix));
-    memcpy(settings.viewToClipMatrixPrev, &mPreviousFrameProjMat, sizeof(settings.viewToClipMatrixPrev));
+    copyMatrix(settings.viewToClipMatrix, currProjMatrix);
+    copyMatrix(settings.viewToClipMatrixPrev, mPreviousFrameProjMat);
 
     const Falcor::float4x4 currViewMatrix = camera->getViewMatrix();
-    memcpy(settings.worldToViewMatrix, &currViewMatrix, sizeof(settings.worldToViewMatrix));
-    memcpy(settings.worldToViewMatrixPrev, &mPreviousFrameViewMat, sizeof(settings.worldToViewMatrixPrev));
+    copyMatrix(settings.worldToViewMatrix, currViewMatrix);
+    copyMatrix(settings.worldToViewMatrixPrev, mPreviousFrameViewMat);
     //--------------------------------------------------------------------------------------------------------
 
     settings.motionVectorScale[0] = 1.0f;
@@ -501,157 +441,210 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 
     settings.cameraJitter[0] = 0.0f;
     settings.cameraJitter[1] = 0.0f;
-    settings.cameraJitterPrev[0] = 0.0f;
-    settings.cameraJitterPrev[1] = 0.0f;
-
-    settings.resourceSize[0] = (uint16_t)mWidth;
-    settings.resourceSize[1] = (uint16_t)mHeight;
-
-    settings.resourceSizePrev[0] = (uint16_t)mWidth;
-    settings.resourceSizePrev[1] = (uint16_t)mHeight;
-
-    settings.rectSize[0] = (uint16_t)((float)mWidth + 0.5f);
-    settings.rectSize[1] = (uint16_t)((float)mHeight + 0.5f);
-
-    settings.rectSizePrev[0] = (uint16_t)((float)mWidth + 0.5f);
-    settings.rectSizePrev[1] = (uint16_t)((float)mHeight + 0.5f);
-
-    settings.viewZScale = 1.0f;
 
     settings.denoisingRange = 4.0f * mpScene->getSceneBounds().radius();
 
     settings.disocclusionThreshold = 0.01f;
-    settings.disocclusionThresholdAlternate = 0.05f;
-
-    // settings.strandMaterialID = MATERIAL_ID_HAIR / 3.0f;
-
-    // settings.splitScreen = (m_Settings.denoiser == DENOISER_REFERENCE || m_Settings.RR) ? 1.0f : m_Settings.separator;
-    // settings.printfAt[0] = wantPrintf ? (uint16_t)ImGui::GetIO().MousePos.x : 9999;
-    // settings.printfAt[1] = wantPrintf ? (uint16_t)ImGui::GetIO().MousePos.y : 9999;
-
     settings.debug = false;
     settings.frameIndex = mFrameIndex;
 
     settings.accumulationMode = mFrameIndex ? nrd::AccumulationMode::CONTINUE : nrd::AccumulationMode::RESTART;
-    settings.isMotionVectorInWorldSpace = false;
-    settings.isBaseColorMetalnessAvailable = false;
-    settings.enableValidation = false;
 }
 
-struct CD3DX12_RESOURCE_BARRIER : public D3D12_RESOURCE_BARRIER
+
+void DenoisingPass::populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings)
 {
-    CD3DX12_RESOURCE_BARRIER() {}
-    explicit CD3DX12_RESOURCE_BARRIER(const D3D12_RESOURCE_BARRIER& o) : D3D12_RESOURCE_BARRIER(o) {}
-    static inline CD3DX12_RESOURCE_BARRIER Transition(
-        _In_ ID3D12Resource* pResource,
-        D3D12_RESOURCE_STATES stateBefore,
-        D3D12_RESOURCE_STATES stateAfter,
-        UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-        D3D12_RESOURCE_BARRIER_FLAGS flags = D3D12_RESOURCE_BARRIER_FLAG_NONE
-    )
-    {
-        CD3DX12_RESOURCE_BARRIER result;
-        ZeroMemory(&result, sizeof(result));
-        D3D12_RESOURCE_BARRIER& barrier = result;
-        result.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        result.Flags = flags;
-        barrier.Transition.pResource = pResource;
-        barrier.Transition.StateBefore = stateBefore;
-        barrier.Transition.StateAfter = stateAfter;
-        barrier.Transition.Subresource = subresource;
-        return result;
-    }
-    static inline CD3DX12_RESOURCE_BARRIER Aliasing(_In_ ID3D12Resource* pResourceBefore, _In_ ID3D12Resource* pResourceAfter)
-    {
-        CD3DX12_RESOURCE_BARRIER result;
-        ZeroMemory(&result, sizeof(result));
-        D3D12_RESOURCE_BARRIER& barrier = result;
-        result.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
-        barrier.Aliasing.pResourceBefore = pResourceBefore;
-        barrier.Aliasing.pResourceAfter = pResourceAfter;
-        return result;
-    }
-    static inline CD3DX12_RESOURCE_BARRIER UAV(_In_ ID3D12Resource* pResource)
-    {
-        CD3DX12_RESOURCE_BARRIER result;
-        ZeroMemory(&result, sizeof(result));
-        D3D12_RESOURCE_BARRIER& barrier = result;
-        result.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = pResource;
-        return result;
-    }
-    operator const D3D12_RESOURCE_BARRIER&() const { return *this; }
-};
-
-void DenoisingPass::TransitionTextureToCommon(Falcor::ref<Falcor::Texture>& falcorTexture)
-{
-    ID3D12Resource* nativeTexture = falcorTexture->getNativeHandle().as<ID3D12Resource*>();
-
-    const CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        nativeTexture,
-        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-        D3D12_RESOURCE_STATE_COMMON
-    );
-
-    mNRINativeCommandList->ResourceBarrier(1, &barrier);
+    settings.prepassBlurRadius = 16.0f;
+    settings.diffuseMaxFastAccumulatedFrameNum = 2;
+    settings.diffuseLobeAngleFraction = 0.8f;
+    settings.disocclusionFixMaxRadius = 32.0f;
+    settings.disocclusionFixNumFramesToFix = 4;
+    settings.spatialVarianceEstimationHistoryThreshold = 4;
+    settings.atrousIterationNum = 6;
+    settings.depthThreshold = 0.02f;
 }
 
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
 {
     FALCOR_PROFILE(pRenderContext, "DenoisingPass::dipatchNRD");
 
-    //=======================================================================================================
-    // SETTINGS
-    //=======================================================================================================
-
-    m_NRD->NewFrame();
-
     nrd::CommonSettings commonSettings = {};
     populateCommonSettings(commonSettings);
-    NRD_ASSERT(m_NRD->SetCommonSettings(commonSettings));
 
-    nrd::RelaxSettings denoiserSettings{};
-    const bool SetDenoiserSettingsRes = m_NRD->SetDenoiserSettings(NRD_ID(RELAX_DIFFUSE), &denoiserSettings);
-    NRD_ASSERT(SetDenoiserSettingsRes);
+    nrd::RelaxDiffuseSettings denoiserSettings{};
+    populateDenoiserSettings(denoiserSettings);
+    nrd::SetMethodSettings(*mpDenoiser, nrd::Method::RELAX_DIFFUSE, static_cast<void*>(&denoiserSettings));
 
-    //=======================================================================================================
-    // PERFORM DENOISING
-    //=======================================================================================================
+    const nrd::DispatchDesc* dispatchDescs = nullptr;
+    uint32_t dispatchDescNum = 0;
+    nrd::Result result = nrd::GetComputeDispatches(*mpDenoiser, commonSettings, dispatchDescs, dispatchDescNum);
+    FALCOR_ASSERT(result == nrd::Result::SUCCESS);
 
-    NrdUserPool userPool = {};
+    for (uint32_t i = 0; i < dispatchDescNum; i++)
     {
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, *mNRDMotionVectors);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, *mNRDViewZ);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, *mNRDNormalLinearRoughness);
+        const nrd::DispatchDesc& dispatchDesc = dispatchDescs[i];
+        FALCOR_PROFILE(pRenderContext, dispatchDesc.name);
+        dispatch(pRenderContext, dispatchDesc);
+    }
 
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, *mInDiffuseRadianceHitTexture);
-        NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, *mOutDiffuseRadianceHitTexture);
-        // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, *m_Out_NRD_ValidationTexture);
-    };
-
-    mNRINativeCommandAllocator->Reset();
-    const HRESULT hr = mNRINativeCommandList->Reset(mNRINativeCommandAllocator, nullptr);
-
-    TransitionTextureToCommon(mViewZTexture);
-    TransitionTextureToCommon(mMotionVectorTexture);
-    TransitionTextureToCommon(mNormalLinearRoughnessTexture);
-    TransitionTextureToCommon(mOuputTexture);
-    TransitionTextureToCommon(m_InColorTexture);
-
-    const nrd::Identifier denoiserId = NRD_ID(RELAX_DIFFUSE);
-    m_NRD->Denoise(&denoiserId, 1, *m_nriCommandBuffer, userPool);
-
-    TransitionTextureToCommon(mViewZTexture);
-    TransitionTextureToCommon(mMotionVectorTexture);
-    TransitionTextureToCommon(mNormalLinearRoughnessTexture);
-    TransitionTextureToCommon(mOuputTexture);
-    TransitionTextureToCommon(m_InColorTexture);
-
-    //---------------------------------------------------------------------------------------------------------------------------------
-
-    mNRINativeCommandList->Close();
-    ID3D12CommandList* ppCommandLists[] = {mNRINativeCommandList};
-    mNRINativeCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    // Submit the existing command list and start a new one.
+    pRenderContext->submit();
 }
+
+void DenoisingPass::dispatch(RenderContext* pRenderContext, const nrd::DispatchDesc& dispatchDesc)
+{
+    const nrd::DenoiserDesc& denoiserDesc = nrd::GetDenoiserDesc(*mpDenoiser);
+    const nrd::PipelineDesc& pipelineDesc = denoiserDesc.pipelines[dispatchDesc.pipelineIndex];
+
+    // Set root signature.
+    mpRootSignatures[dispatchDesc.pipelineIndex]->bindForCompute(pRenderContext);
+
+    // Upload constants.
+    auto cbAllocation = mpDevice->getUploadHeap()->allocate(dispatchDesc.constantBufferDataSize, ResourceBindFlags::Constant);
+    std::memcpy(cbAllocation.pData, dispatchDesc.constantBufferData, dispatchDesc.constantBufferDataSize);
+
+    // Create descriptor set for the NRD pass.
+    ref<D3D12DescriptorSet> CBVSRVUAVDescriptorSet = D3D12DescriptorSet::create(
+        mpDevice, mCBVSRVUAVdescriptorSetLayouts[dispatchDesc.pipelineIndex], D3D12DescriptorSetBindingUsage::ExplicitBind
+    );
+
+    // Set CBV.
+    mpCBV = D3D12ConstantBufferView::create(mpDevice, cbAllocation.getGpuAddress(), cbAllocation.size);
+    CBVSRVUAVDescriptorSet->setCbv(0 /* NB: range #0 is CBV range */, denoiserDesc.constantBufferDesc.registerIndex, mpCBV.get());
+
+    uint32_t resourceIndex = 0;
+    for (uint32_t descriptorRangeIndex = 0; descriptorRangeIndex < pipelineDesc.descriptorRangeNum; descriptorRangeIndex++)
+    {
+        const nrd::DescriptorRangeDesc& nrdDescriptorRange = pipelineDesc.descriptorRanges[descriptorRangeIndex];
+
+        for (uint32_t descriptorOffset = 0; descriptorOffset < nrdDescriptorRange.descriptorNum; descriptorOffset++)
+        {
+            FALCOR_ASSERT(resourceIndex < dispatchDesc.resourceNum);
+            const nrd::Resource& resource = dispatchDesc.resources[resourceIndex];
+
+            FALCOR_ASSERT(resource.stateNeeded == nrdDescriptorRange.descriptorType);
+
+            ref<Texture> texture;
+
+            switch (resource.type)
+            {
+            case nrd::ResourceType::IN_MV:
+                texture = renderData.getTexture(kInputMotionVectors);
+                break;
+            case nrd::ResourceType::IN_NORMAL_ROUGHNESS:
+                texture = renderData.getTexture(kInputNormalRoughnessMaterialID);
+                break;
+            case nrd::ResourceType::IN_VIEWZ:
+                texture = renderData.getTexture(kInputViewZ);
+                break;
+            case nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST:
+                texture = renderData.getTexture(kInputDiffuseRadianceHitDist);
+                break;
+            case nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST:
+                texture = renderData.getTexture(kInputSpecularRadianceHitDist);
+                break;
+            case nrd::ResourceType::IN_SPEC_HITDIST:
+                texture = renderData.getTexture(kInputSpecularHitDist);
+                break;
+            case nrd::ResourceType::IN_DELTA_PRIMARY_POS:
+                texture = renderData.getTexture(kInputDeltaPrimaryPosW);
+                break;
+            case nrd::ResourceType::IN_DELTA_SECONDARY_POS:
+                texture = renderData.getTexture(kInputDeltaSecondaryPosW);
+                break;
+            case nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST:
+                texture = renderData.getTexture(kOutputFilteredDiffuseRadianceHitDist);
+                break;
+            case nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST:
+                texture = renderData.getTexture(kOutputFilteredSpecularRadianceHitDist);
+                break;
+            case nrd::ResourceType::OUT_REFLECTION_MV:
+                texture = renderData.getTexture(kOutputReflectionMotionVectors);
+                break;
+            case nrd::ResourceType::OUT_DELTA_MV:
+                texture = renderData.getTexture(kOutputDeltaMotionVectors);
+                break;
+            case nrd::ResourceType::TRANSIENT_POOL:
+                texture = mpTransientTextures[resource.indexInPool];
+                break;
+            case nrd::ResourceType::PERMANENT_POOL:
+                texture = mpPermanentTextures[resource.indexInPool];
+                break;
+            default:
+                FALCOR_ASSERT(!"Unavailable resource type");
+                break;
+            }
+
+            FALCOR_ASSERT(texture);
+
+            // Set up resource barriers.
+            Resource::State newState =
+                resource.stateNeeded == nrd::DescriptorType::TEXTURE ? Resource::State::ShaderResource : Resource::State::UnorderedAccess;
+            for (uint16_t mip = 0; mip < resource.mipNum; mip++)
+            {
+                const ResourceViewInfo viewInfo = ResourceViewInfo(resource.mipOffset + mip, 1, 0, 1);
+                pRenderContext->resourceBarrier(texture.get(), newState, &viewInfo);
+            }
+
+            // Set the SRV and UAV descriptors.
+            if (nrdDescriptorRange.descriptorType == nrd::DescriptorType::TEXTURE)
+            {
+                ref<ShaderResourceView> pSRV = texture->getSRV(resource.mipOffset, resource.mipNum, 0, 1);
+                CBVSRVUAVDescriptorSet->setSrv(
+                    descriptorRangeIndex + 1 /* NB: range #0 is CBV range */,
+                    nrdDescriptorRange.baseRegisterIndex + descriptorOffset,
+                    pSRV.get()
+                );
+            }
+            else
+            {
+                ref<UnorderedAccessView> pUAV = texture->getUAV(resource.mipOffset, 0, 1);
+                CBVSRVUAVDescriptorSet->setUav(
+                    descriptorRangeIndex + 1 /* NB: range #0 is CBV range */,
+                    nrdDescriptorRange.baseRegisterIndex + descriptorOffset,
+                    pUAV.get()
+                );
+            }
+
+            resourceIndex++;
+        }
+    }
+
+    FALCOR_ASSERT(resourceIndex == dispatchDesc.resourceNum);
+
+    // Set descriptor sets.
+    mpSamplersDescriptorSet->bindForCompute(pRenderContext, mpRootSignatures[dispatchDesc.pipelineIndex].get(), 0);
+    CBVSRVUAVDescriptorSet->bindForCompute(pRenderContext, mpRootSignatures[dispatchDesc.pipelineIndex].get(), 1);
+
+    // Set pipeline state.
+    ref<ComputePass> pPass = mpPasses[dispatchDesc.pipelineIndex];
+    ref<Program> pProgram = pPass->getProgram();
+    ref<const ProgramKernels> pProgramKernels = pProgram->getActiveVersion()->getKernels(mpDevice.get(), pPass->getVars().get());
+
+    // Check if anything changed.
+    bool newProgram = (pProgramKernels.get() != mpCachedProgramKernels[dispatchDesc.pipelineIndex].get());
+    if (newProgram)
+    {
+        mpCachedProgramKernels[dispatchDesc.pipelineIndex] = pProgramKernels;
+
+        ComputeStateObjectDesc desc;
+        desc.pProgramKernels = pProgramKernels;
+        desc.pD3D12RootSignatureOverride = mpRootSignatures[dispatchDesc.pipelineIndex];
+
+        ref<ComputeStateObject> pCSO = mpDevice->createComputeStateObject(desc);
+        mpCSOs[dispatchDesc.pipelineIndex] = pCSO;
+    }
+    ID3D12GraphicsCommandList* pCommandList =
+        pRenderContext->getLowLevelData()->getCommandBufferNativeHandle().as<ID3D12GraphicsCommandList*>();
+    ID3D12PipelineState* pPipelineState = mpCSOs[dispatchDesc.pipelineIndex]->getNativeHandle().as<ID3D12PipelineState*>();
+
+    pCommandList->SetPipelineState(pPipelineState);
+
+    // Dispatch.
+    pCommandList->Dispatch(dispatchDesc.gridWidth, dispatchDesc.gridHeight, 1);
+
+    mpDevice->getUploadHeap()->release(cbAllocation);
+}
+
 
 } // namespace Restir
