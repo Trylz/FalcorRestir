@@ -453,14 +453,6 @@ void DenoisingPass::populateCommonSettings(nrd::CommonSettings& settings)
 
 void DenoisingPass::populateDenoiserSettings(nrd::RelaxDiffuseSettings& settings)
 {
-    settings.prepassBlurRadius = 16.0f;
-    settings.diffuseMaxFastAccumulatedFrameNum = 2;
-    settings.diffuseLobeAngleFraction = 0.8f;
-    settings.disocclusionFixMaxRadius = 32.0f;
-    settings.disocclusionFixNumFramesToFix = 4;
-    settings.spatialVarianceEstimationHistoryThreshold = 4;
-    settings.atrousIterationNum = 6;
-    settings.depthThreshold = 0.02f;
 }
 
 void DenoisingPass::dipatchNRD(Falcor::RenderContext* pRenderContext)
