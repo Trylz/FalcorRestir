@@ -31,8 +31,8 @@
 #include "Core/API/Buffer.h"
 #include "Core/API/Texture.h"
 #include "Core/API/Fence.h"
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include "Dependencies/NvidiaCuda/include/cuda.h"
+#include "Dependencies/NvidiaCuda/include/cuda_runtime_api.h"
 #include <sstream>
 
 namespace
