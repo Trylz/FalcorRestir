@@ -32,8 +32,7 @@
 #include "Core/API/Handles.h"
 #include "Core/API/Device.h"
 #include "Core/API/Fence.h"
-
-#include <cuda.h>
+#include "Dependencies/NvidiaCuda/include/cuda.h"
 #include "CudaRuntime.h" // Instead of <cuda_runtime.h> to avoid name clashes.
 
 #include <vector>
