@@ -138,7 +138,7 @@ if(CMAKE_CUDA_COMPILER)
     find_package(CUDAToolkit REQUIRED)
     set(FALCOR_HAS_CUDA ON)
 else()
-    set(FALCOR_HAS_CUDA OFF)
+    set(FALCOR_HAS_CUDA ON)
 endif()
 
 # -----------------------------------------------------------------------------
