@@ -1,5 +1,4 @@
 #include "DenoisingPass.h"
-#include "Dependencies/NvidiaNRD/Integration/NRDIntegration.hpp"
 #include "GBuffer.h"
 #include "Core/API/NativeHandleTraits.h"
 
