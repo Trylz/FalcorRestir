@@ -39,7 +39,9 @@
 #include "Utils/Scripting/ScriptBindings.h"
 #include "Utils/Scripting/ndarray.h"
 
+#if FALCOR_HAS_CUDA
 #include "Utils/CudaUtils.h"
+#endif
 
 namespace Falcor
 {
@@ -372,12 +374,14 @@ uint64_t Buffer::getGpuAddress() const
     return mGfxBufferResource->getDeviceAddress();
 }
 
+#if FALCOR_HAS_CUDA
 cuda_utils::ExternalMemory* Buffer::getCudaMemory() const
 {
     if (!mCudaMemory)
         mCudaMemory = make_ref<cuda_utils::ExternalMemory>(ref<Resource>(const_cast<Buffer*>(this)));
     return mCudaMemory.get();
 }
+#endif
 
 inline pybind11::ndarray<pybind11::numpy> buffer_to_numpy(const Buffer& self)
 {
@@ -421,6 +425,7 @@ inline void buffer_from_numpy(Buffer& self, pybind11::ndarray<pybind11::numpy> d
     self.setBlob(data.data(), 0, dataSize);
 }
 
+#if FALCOR_HAS_CUDA
 inline pybind11::ndarray<pybind11::pytorch> buffer_to_torch(const Buffer& self, std::vector<size_t> shape, DataType dtype)
 {
     cuda_utils::ExternalMemory* cudaMemory = self.getCudaMemory();
@@ -453,7 +458,7 @@ inline void buffer_copy_to_torch(Buffer& self, pybind11::ndarray<pybind11::pytor
 
     cuda_utils::memcpyDeviceToDevice(data.data(), cudaMemory->getMappedData(), dataSize);
 }
-
+#endif
 
 FALCOR_SCRIPT_BINDING(Buffer)
 {
@@ -475,8 +480,10 @@ FALCOR_SCRIPT_BINDING(Buffer)
 
     buffer.def("to_numpy", buffer_to_numpy);
     buffer.def("from_numpy", buffer_from_numpy, "data"_a);
+#if FALCOR_HAS_CUDA
     buffer.def("to_torch", buffer_to_torch, "shape"_a, "dtype"_a = DataType::float32);
     buffer.def("from_torch", buffer_from_torch, "data"_a);
     buffer.def("copy_to_torch", buffer_copy_to_torch, "data"_a);
+#endif
 }
 } // namespace Falcor

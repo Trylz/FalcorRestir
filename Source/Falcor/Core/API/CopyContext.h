@@ -36,8 +36,10 @@
 #include <string>
 #include <vector>
 
+#if FALCOR_HAS_CUDA
 struct CUstream_st;
 typedef CUstream_st* cudaStream_t;
+#endif
 
 namespace Falcor
 {
@@ -112,6 +114,7 @@ public:
      */
     void wait(Fence* pFence, uint64_t value = Fence::kAuto);
 
+#if FALCOR_HAS_CUDA
     /**
      * Wait for the CUDA stream to finish execution.
      * Queues a device-side wait on the command queue and adds an async fence
@@ -127,6 +130,7 @@ public:
      * @param stream The CUDA stream to wait on.
      */
     void waitForFalcor(cudaStream_t stream = 0);
+#endif
 
     /**
      * Insert a resource barrier

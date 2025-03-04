@@ -30,7 +30,9 @@
 #include "GFXAPI.h"
 #include "NativeHandleTraits.h"
 
+#if FALCOR_HAS_CUDA
 #include "Utils/CudaUtils.h"
+#endif
 
 #include <slang-gfx.h>
 
@@ -41,6 +43,7 @@ LowLevelContextData::LowLevelContextData(Device* pDevice, gfx::ICommandQueue* pQ
     mpFence = mpDevice->createFence();
     mpFence->breakStrongReferenceToDevice();
 
+#if FALCOR_HAS_CUDA
     // GFX currently doesn't support shared fences on Vulkan.
     if (mpDevice->getType() == Device::Type::D3D12)
     {
@@ -49,6 +52,7 @@ LowLevelContextData::LowLevelContextData(Device* pDevice, gfx::ICommandQueue* pQ
         mpCudaFence->breakStrongReferenceToDevice();
         mpCudaSemaphore = make_ref<cuda_utils::ExternalSemaphore>(mpCudaFence);
     }
+#endif
 
     openCommandBuffer();
 }
