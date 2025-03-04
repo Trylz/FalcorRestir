@@ -31,8 +31,8 @@
 #include "Utils/CudaRuntime.h"
 #include "Utils/CudaUtils.h"
 
-#include <optix.h>
-#include <optix_stubs.h>
+#include "Dependencies/NvidiaOptix/include/optix.h"
+#include "Dependencies/NvidiaOptix/include/optix_stubs.h"
 
 /**
  * Utility class for a GPU/device buffer for use with CUDA.
