@@ -83,6 +83,7 @@ public:
     YannOptixDenoiser(
         Falcor::ref<Falcor::Device> pDevice,
         Falcor::ref<Falcor::Scene> pScene,
+        Falcor::ref<Falcor::Texture>& inColorTexture,
         uint32_t width,
         uint32_t height
     );
@@ -93,6 +94,10 @@ public:
 private:
     ref<Device> mpDevice;
     ref<Scene> mpScene;
+
+    Falcor::ref<Falcor::Texture> mInColorTexture;
+    Falcor::ref<Falcor::Texture> mMotionVectorTexture;// Yann to create and compute
+    Falcor::ref<Falcor::Texture> mOuputTexture;// Yann to create
 
     /**
      * Call when we need to (re-)create an OptiX denoiser, on initialization or when settings change.

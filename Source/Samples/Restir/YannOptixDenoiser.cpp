@@ -44,10 +44,11 @@ namespace Restir
 YannOptixDenoiser::YannOptixDenoiser(
     Falcor::ref<Falcor::Device> pDevice,
     Falcor::ref<Falcor::Scene> pScene,
+    Falcor::ref<Falcor::Texture>& inColorTexture,
     uint32_t width,
     uint32_t height
 )
-    : mpDevice(pDevice), mpScene(pScene), mWidth(width), mHeight(height)
+    : mpDevice(pDevice), mpScene(pScene), mInColorTexture(inColorTexture), mWidth(width), mHeight(height)
 {
     
     mpConvertTexToBuf = ComputePass::create(mpDevice, "Samples/Restir/ConvertTexToBuf.slang", "main");
@@ -185,27 +186,23 @@ void YannOptixDenoiser::execute(RenderContext* pRenderContext)
         setupDenoiser();
     }
 
+    uint2 bufferSize = uint2(mWidth, mHeight);
+
     // Copy input textures to correct format OptiX images / buffers for denoiser inputs
     // Note: if () conditions are somewhat excessive, due to attempts to track down mysterious, hard-to-repo crashes
-    convertTexToBuf(pRenderContext, renderData.getTexture(kColorInput), mDenoiser.interop.denoiserInput.buffer, mBufferSize);
-    if (mHasAlbedoInput && mDenoiser.options.guideAlbedo)
-    {
-        convertTexToBuf(pRenderContext, renderData.getTexture(kAlbedoInput), mDenoiser.interop.albedo.buffer, mBufferSize);
-    }
-    if (mHasNormalInput && mDenoiser.options.guideNormal)
-    {
-        convertNormalsToBuf(
-            pRenderContext,
-            renderData.getTexture(kNormalInput),
-            mDenoiser.interop.normal.buffer,
-            mBufferSize,
-            transpose(inverse(mpScene->getCamera()->getViewMatrix()))
-        );
-    }
-    if (mHasMotionInput && mDenoiser.modelKind == OptixDenoiserModelKind::OPTIX_DENOISER_MODEL_KIND_TEMPORAL)
-    {
-        convertMotionVectors(pRenderContext, renderData.getTexture(kMotionInput), mDenoiser.interop.motionVec.buffer, mBufferSize);
-    }
+    convertTexToBuf(pRenderContext, mInColorTexture, mDenoiser.interop.denoiserInput.buffer, bufferSize);
+
+    convertTexToBuf(pRenderContext, GBufferSingleton::instance()->getAlbedoTexture(), mDenoiser.interop.albedo.buffer, bufferSize);
+
+    convertNormalsToBuf(
+        pRenderContext,
+        GBufferSingleton::instance()->getCurrentNormalWsTexture(),
+        mDenoiser.interop.normal.buffer,
+        bufferSize,
+        transpose(inverse(mpScene->getCamera()->getViewMatrix()))
+    );
+
+    convertMotionVectors(pRenderContext, mMotionVectorTexture, mDenoiser.interop.motionVec.buffer, bufferSize);
 
     pRenderContext->waitForFalcor();
 
@@ -237,7 +234,7 @@ void YannOptixDenoiser::execute(RenderContext* pRenderContext)
 
     // On the first frame with a new denoiser, we have no prior input for temporal denoising.
     //    In this case, pass in our current frame as both the current and prior frame.
-    if (mIsFirstFrame)
+    if (mFirstFrame)
     {
         mDenoiser.layer.previousOutput = mDenoiser.layer.input;
     }
@@ -261,31 +258,31 @@ void YannOptixDenoiser::execute(RenderContext* pRenderContext)
     pRenderContext->waitForCuda();
 
     // Copy denoised output buffer to texture for Falcor to consume
-    convertBufToTex(pRenderContext, mDenoiser.interop.denoiserOutput.buffer, renderData.getTexture(kOutput), mBufferSize);
+    convertBufToTex(pRenderContext, mDenoiser.interop.denoiserOutput.buffer, mOuputTexture, bufferSize);
 
     // Make sure we set the previous frame output to the correct location for future frames.
     // Everything in this if() cluase could happen every frame, but is redundant after the first frame.
-    if (mIsFirstFrame)
+    if (mFirstFrame)
     {
         // Note: This is a deep copy that can dangerously point to deallocated memory when resetting denoiser settings.
         // This is (partly) why in the first frame, the layer.previousOutput is set to layer.input, above.
         mDenoiser.layer.previousOutput = mDenoiser.layer.output;
 
         // We're no longer in the first frame of denoising; no special processing needed now.
-        mIsFirstFrame = false;
+        mFirstFrame = false;
     }
 }
 
 // Basically a wrapper to handle null Falcor Buffers gracefully, which couldn't
 // happen in getShareDevicePtr(), due to the bootstrapping that avoids namespace conflicts
-void* OptixDenoiser_::exportBufferToCudaDevice(ref<Buffer>& buf)
+void* YannOptixDenoiser::exportBufferToCudaDevice(ref<Buffer>& buf)
 {
     if (buf == nullptr)
         return nullptr;
     return cuda_utils::getSharedDevicePtr(buf->getDevice()->getType(), buf->getSharedApiHandle(), (uint32_t)buf->getSize());
 }
 
-void OptixDenoiser_::setupDenoiser()
+void YannOptixDenoiser::setupDenoiser()
 {
     // Destroy the denoiser, if it already exists
     if (mDenoiser.denoiser)
@@ -316,7 +313,7 @@ void OptixDenoiser_::setupDenoiser()
     );
 }
 
-void OptixDenoiser_::convertMotionVectors(RenderContext* pRenderContext, const ref<Texture>& tex, const ref<Buffer>& buf, const uint2& size)
+void YannOptixDenoiser::convertMotionVectors(RenderContext* pRenderContext, const ref<Texture>& tex, const ref<Buffer>& buf, const uint2& size)
 {
     auto var = mpConvertMotionVectors->getRootVar();
     var["GlobalCB"]["gStride"] = size.x;
@@ -326,7 +323,7 @@ void OptixDenoiser_::convertMotionVectors(RenderContext* pRenderContext, const r
     mpConvertMotionVectors->execute(pRenderContext, size.x, size.y);
 }
 
-void OptixDenoiser_::convertTexToBuf(RenderContext* pRenderContext, const ref<Texture>& tex, const ref<Buffer>& buf, const uint2& size)
+void YannOptixDenoiser::convertTexToBuf(RenderContext* pRenderContext, const ref<Texture>& tex, const ref<Buffer>& buf, const uint2& size)
 {
     auto var = mpConvertTexToBuf->getRootVar();
     var["GlobalCB"]["gStride"] = size.x;
@@ -335,7 +332,7 @@ void OptixDenoiser_::convertTexToBuf(RenderContext* pRenderContext, const ref<Te
     mpConvertTexToBuf->execute(pRenderContext, size.x, size.y);
 }
 
-void OptixDenoiser_::convertNormalsToBuf(
+void YannOptixDenoiser::convertNormalsToBuf(
     RenderContext* pRenderContext,
     const ref<Texture>& tex,
     const ref<Buffer>& buf,
@@ -343,6 +340,7 @@ void OptixDenoiser_::convertNormalsToBuf(
     float4x4 viewIT
 )
 {
+    // What is this doing???
     auto var = mpConvertNormalsToBuf->getRootVar();
     var["GlobalCB"]["gStride"] = size.x;
     var["GlobalCB"]["gViewIT"] = viewIT;
@@ -351,7 +349,7 @@ void OptixDenoiser_::convertNormalsToBuf(
     mpConvertTexToBuf->execute(pRenderContext, size.x, size.y);
 }
 
-void OptixDenoiser_::convertBufToTex(RenderContext* pRenderContext, const ref<Buffer>& buf, const ref<Texture>& tex, const uint2& size)
+void YannOptixDenoiser::convertBufToTex(RenderContext* pRenderContext, const ref<Buffer>& buf, const ref<Texture>& tex, const uint2& size)
 {
     auto var = mpConvertBufToTex->getRootVar();
     var["GlobalCB"]["gStride"] = size.x;
