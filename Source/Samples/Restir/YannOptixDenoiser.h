@@ -124,10 +124,10 @@ private:
 
     // GUI helpers for choosing between different OptiX AI denoiser modes
 
-    Gui::DropdownList mModelChoices = {};
     uint32_t mSelectedModel = OptixDenoiserModelKind::OPTIX_DENOISER_MODEL_KIND_HDR;
 
     // Optix context
+    bool mFirstFrame = true;
 
     OptixDeviceContext mOptixContext = nullptr;
 
