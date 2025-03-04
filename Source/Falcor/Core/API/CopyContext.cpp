@@ -41,10 +41,8 @@
 #include "Core/Error.h"
 #include "Utils/Logger.h"
 #include "Utils/Math/Common.h"
-
-#if FALCOR_HAS_CUDA
 #include "Utils/CudaUtils.h"
-#endif
+
 
 namespace Falcor
 {
@@ -106,7 +104,6 @@ void CopyContext::wait(Fence* pFence, uint64_t value)
     FALCOR_GFX_CALL(mpLowLevelData->getGfxCommandQueue()->waitForFenceValuesOnDevice(1, fences, waitValues));
 }
 
-#if FALCOR_HAS_CUDA
 void CopyContext::waitForCuda(cudaStream_t stream)
 {
     if (mpDevice->getType() == Device::Type::D3D12)
@@ -135,7 +132,6 @@ void CopyContext::waitForFalcor(cudaStream_t stream)
         submit(true);
     }
 }
-#endif
 
 CopyContext::ReadTextureTask::SharedPtr CopyContext::asyncReadTextureSubresource(const Texture* pTexture, uint32_t subresourceIndex)
 {

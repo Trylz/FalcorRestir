@@ -164,17 +164,13 @@ inline static ref<SceneGradients> createPython(ref<Device> device, const pybind1
 inline void aggregate(SceneGradients& self, RenderContext* pRenderContext, GradientType gradType)
 {
     self.aggregateGrads(pRenderContext, gradType);
-#if FALCOR_HAS_CUDA
     pRenderContext->waitForFalcor();
-#endif
 }
 
 inline void aggregateAll(SceneGradients& self, RenderContext* pRenderContext)
 {
     self.aggregateAllGrads(pRenderContext);
-#if FALCOR_HAS_CUDA
     pRenderContext->waitForFalcor();
-#endif
 }
 
 inline pybind11::list getGradTypes(SceneGradients& self)

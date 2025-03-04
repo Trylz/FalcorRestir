@@ -718,7 +718,6 @@ FALCOR_SCRIPT_BINDING(CopyContext)
 
     copyContext.def("submit", &CopyContext::submit, "wait"_a = false);
 
-#if FALCOR_HAS_CUDA
     copyContext.def(
         "wait_for_cuda",
         [](CopyContext& self, uint64_t stream = 0) { self.waitForCuda(reinterpret_cast<cudaStream_t>(stream)); },
@@ -729,7 +728,6 @@ FALCOR_SCRIPT_BINDING(CopyContext)
         [](CopyContext& self, uint64_t stream = 0) { self.waitForFalcor(reinterpret_cast<cudaStream_t>(stream)); },
         "stream"_a = 0
     );
-#endif
 
     copyContext.def("uav_barrier", &CopyContext::uavBarrier, "resource"_a);
     copyContext.def("copy_resource", &CopyContext::copyResource, "dst"_a, "src"_a);

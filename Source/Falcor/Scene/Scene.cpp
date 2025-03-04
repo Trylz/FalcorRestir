@@ -4208,9 +4208,8 @@ namespace Falcor
         // Write material parameters to buffer.
         FALCOR_CHECK(paramsBuffer->getSize() >= params.size() * sizeof(float), "Material parameter buffer is too small.");
         paramsBuffer->setBlob(params.data(), 0, params.size() * sizeof(float));
-#if FALCOR_HAS_CUDA
+
         scene.getDevice()->getRenderContext()->waitForFalcor();
-#endif
     }
 
     /** Set serialized material parameters for a list of materials.
@@ -4238,9 +4237,7 @@ namespace Falcor
 
         // Need to update scene explicitly without calling `testbed.frame()`.
         scene.updateForInverseRendering(scene.getDevice()->getRenderContext(), true, false);
-#if FALCOR_HAS_CUDA
         scene.getDevice()->getRenderContext()->waitForFalcor();
-#endif
     }
 
     inline void getMeshVerticesAndIndicesPython(Scene& scene, MeshID meshID, const pybind11::dict& dict)
@@ -4253,9 +4250,7 @@ namespace Falcor
             buffers[name] = buffer;
         }
         scene.getMeshVerticesAndIndices(meshID, buffers);
-#if FALCOR_HAS_CUDA
         scene.getDevice()->getRenderContext()->waitForFalcor();
-#endif
     }
 
     inline void setMeshVerticesPython(Scene& scene, MeshID meshID, const pybind11::dict& dict)
@@ -4268,9 +4263,7 @@ namespace Falcor
             buffers[name] = buffer;
         }
         scene.setMeshVertices(meshID, buffers);
-#if FALCOR_HAS_CUDA
         scene.getDevice()->getRenderContext()->waitForFalcor();
-#endif
     }
 
     FALCOR_SCRIPT_BINDING(Scene)

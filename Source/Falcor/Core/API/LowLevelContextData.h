@@ -69,10 +69,8 @@ public:
 
     const ref<Fence>& getFence() const { return mpFence; }
 
-#if FALCOR_HAS_CUDA
     const ref<Fence>& getCudaFence() const { return mpCudaFence; }
     const ref<cuda_utils::ExternalSemaphore>& getCudaSemaphore() const { return mpCudaSemaphore; }
-#endif
 
     void closeCommandBuffer();
     void openCommandBuffer();
@@ -97,10 +95,8 @@ private:
     Slang::ComPtr<gfx::ICommandBuffer> mGfxCommandBuffer;
     ref<Fence> mpFence;
 
-#if FALCOR_HAS_CUDA
     ref<Fence> mpCudaFence;
     ref<cuda_utils::ExternalSemaphore> mpCudaSemaphore;
-#endif
 
     gfx::ICommandBuffer* mpCommandBuffer = nullptr;
     bool mIsCommandBufferOpen = false;

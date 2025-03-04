@@ -322,9 +322,7 @@ public:
         return data;
     }
 
-#if FALCOR_HAS_CUDA
     cuda_utils::ExternalMemory* getCudaMemory() const;
-#endif
 
 protected:
     Slang::ComPtr<gfx::IBufferResource> mGfxBufferResource;
@@ -336,9 +334,7 @@ protected:
     ref<Buffer> mpUAVCounter; // For structured-buffers
     mutable void* mMappedPtr = nullptr;
 
-#if FALCOR_HAS_CUDA
     mutable ref<cuda_utils::ExternalMemory> mCudaMemory;
-#endif
 };
 
 inline std::string to_string(MemoryType c)

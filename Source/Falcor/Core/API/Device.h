@@ -614,13 +614,11 @@ public:
     /// Get the texture row memory alignment in bytes.
     size_t getTextureRowAlignment() const;
 
-#if FALCOR_HAS_CUDA
     /// Initialize CUDA device sharing the same adapter as the graphics device.
     bool initCudaDevice();
 
     /// Get the CUDA device sharing the same adapter as the graphics device.
     cuda_utils::CudaDevice* getCudaDevice() const;
-#endif
 
 
     /// Report live objects in GFX.
@@ -718,11 +716,8 @@ private:
     void* mpRayTraceValidationHandle = nullptr;
 #endif
 
-#if FALCOR_HAS_CUDA
     /// CUDA device sharing the same adapter as the graphics device.
     mutable ref<cuda_utils::CudaDevice> mpCudaDevice;
-#endif
-
 
     std::mutex mGlobalGfxMutex;
 };

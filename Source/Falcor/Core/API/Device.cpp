@@ -45,10 +45,8 @@
 #include "Utils/StringUtils.h"
 #include "Utils/Scripting/ScriptBindings.h"
 #include "Utils/Timing/Profiler.h"
-
-#if FALCOR_HAS_CUDA
 #include "Utils/CudaUtils.h"
-#endif
+
 
 #if FALCOR_HAS_D3D12
 #include "Core/API/Shared/D3D12DescriptorPool.h"
@@ -1052,8 +1050,6 @@ size_t Device::getTextureRowAlignment() const
     return alignment;
 }
 
-#if FALCOR_HAS_CUDA
-
 bool Device::initCudaDevice()
 {
     return getCudaDevice() != nullptr;
@@ -1065,8 +1061,6 @@ cuda_utils::CudaDevice* Device::getCudaDevice() const
         mpCudaDevice = make_ref<cuda_utils::CudaDevice>(this);
     return mpCudaDevice.get();
 }
-
-#endif
 
 
 void Device::reportLiveObjects()
