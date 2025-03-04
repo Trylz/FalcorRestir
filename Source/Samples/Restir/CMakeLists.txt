@@ -4,6 +4,8 @@ target_sources(Restir PRIVATE
 	DenoisingPass.h
     GBuffer.h
     LightManager.h
+    OptixDenoiser.h
+    OptixUtils.h
     ReservoirManager.h
     RestirApp.h
     RISPass.h
@@ -18,12 +20,19 @@ target_sources(Restir PRIVATE
     FloatRandomNumberGenerator.h
     GBuffer.cpp
     LightManager.cpp
+    OptixDenoiser.cpp
+    OptixUtils.cpp
     ReservoirManager.cpp
 	RestirApp.cpp
 	RISPass.cpp
     ShadingPass.cpp
 	TemporalFilteringPass.cpp
 	VisibilityPass.cpp
+
+    ConvertBufToTex.ps.slang
+    ConvertMotionVectorInputs.cs.slang
+    ConvertNormalsToBuf.cs.slang
+    ConvertTexToBuf.cs.slang
 
     DenoisingPass_PackNRD.slang
     DenoisingPass_UnpackNRD.slang
