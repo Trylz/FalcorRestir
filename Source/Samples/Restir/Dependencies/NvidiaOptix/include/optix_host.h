@@ -32,7 +32,7 @@
 #if !defined( OPTIX_DONT_INCLUDE_CUDA )
 // If OPTIX_DONT_INCLUDE_CUDA is defined, cuda driver types must be defined through other
 // means before including optix headers.
-#include <cuda.h>
+#include "..//..//NvidiaCuda/include/cuda.h"
 #endif
 
 
