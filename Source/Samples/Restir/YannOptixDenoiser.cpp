@@ -25,7 +25,7 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **************************************************************************/
-#include "OptixDenoiser.h"
+#include "YannOptixDenoiser.h"
 
 FALCOR_ENUM_INFO(
     OptixDenoiserModelKind,
@@ -38,94 +38,24 @@ FALCOR_ENUM_INFO(
 );
 FALCOR_ENUM_REGISTER(OptixDenoiserModelKind);
 
-namespace
+namespace Restir
 {
-// Names for pass input and output textures
-const char kColorInput[] = "color";
-const char kAlbedoInput[] = "albedo";
-const char kNormalInput[] = "normal";
-const char kMotionInput[] = "mvec";
-const char kOutput[] = "output";
-
-// Names for configuration options available in Python
-const char kEnabled[] = "enabled";
-const char kBlend[] = "blend";
-const char kModel[] = "model";
-const char kDenoiseAlpha[] = "denoiseAlpha";
-
-// Locations of shaders used to (re-)format data as needed by OptiX
-const std::string kConvertTexToBufFile = "RenderPasses/OptixDenoiser/ConvertTexToBuf.cs.slang";
-const std::string kConvertNormalsToBufFile = "RenderPasses/OptixDenoiser/ConvertNormalsToBuf.cs.slang";
-const std::string kConvertMotionVecFile = "RenderPasses/OptixDenoiser/ConvertMotionVectorInputs.cs.slang";
-const std::string kConvertBufToTexFile = "RenderPasses/OptixDenoiser/ConvertBufToTex.ps.slang";
-}; // namespace
-
-static void regOptixDenoiser(pybind11::module& m)
+YannOptixDenoiser::YannOptixDenoiser(
+    Falcor::ref<Falcor::Device> pDevice,
+    Falcor::ref<Falcor::Scene> pScene,
+    uint32_t width,
+    uint32_t height
+)
+    : mpDevice(pDevice), mpScene(pScene), mWidth(width), mHeight(height)
 {
-    pybind11::class_<OptixDenoiser_, RenderPass, ref<OptixDenoiser_>> pass(m, "OptixDenoiser");
-    pass.def_property(kEnabled, &OptixDenoiser_::getEnabled, &OptixDenoiser_::setEnabled);
-}
-
-extern "C" FALCOR_API_EXPORT void registerPlugin(Falcor::PluginRegistry& registry)
-{
-    registry.registerClass<RenderPass, OptixDenoiser_>();
-    ScriptBindings::registerBinding(regOptixDenoiser);
-}
-
-OptixDenoiser_::OptixDenoiser_(ref<Device> pDevice, const Properties& props) : RenderPass(pDevice)
-{
-    for (const auto& [key, value] : props)
-    {
-        if (key == kEnabled)
-            mEnabled = value;
-        else if (key == kModel)
-        {
-            mDenoiser.modelKind = value;
-            mSelectBestMode = false;
-        }
-        else if (key == kBlend)
-            mDenoiser.params.blendFactor = value;
-        else if (key == kDenoiseAlpha)
-            mDenoiser.params.denoiseAlpha = (value ? 1u : 0u);
-        else
-            logWarning("Unknown property '{}' in a OptixDenoiser properties.", key);
-    }
-
-    mpConvertTexToBuf = ComputePass::create(mpDevice, kConvertTexToBufFile, "main");
-    mpConvertNormalsToBuf = ComputePass::create(mpDevice, kConvertNormalsToBufFile, "main");
-    mpConvertMotionVectors = ComputePass::create(mpDevice, kConvertMotionVecFile, "main");
-    mpConvertBufToTex = FullScreenPass::create(mpDevice, kConvertBufToTexFile);
+    
+    mpConvertTexToBuf = ComputePass::create(mpDevice, "Samples/Restir/ConvertTexToBuf.slang", "main");
+    mpConvertNormalsToBuf = ComputePass::create(mpDevice, "Samples/Restir/ConvertNormalsToBuf.slang", "main");
+    mpConvertMotionVectors = ComputePass::create(mpDevice, "Samples/Restir/ConvertMotionVectorInputs.slang", "main");
+    mpConvertBufToTex = FullScreenPass::create(mpDevice, "Samples/Restir/ConvertBufToTex.slang");
     mpFbo = Fbo::create(mpDevice);
 }
 
-Properties OptixDenoiser_::getProperties() const
-{
-    Properties props;
-
-    props[kEnabled] = mEnabled;
-    props[kBlend] = mDenoiser.params.blendFactor;
-    props[kModel] = mDenoiser.modelKind;
-    props[kDenoiseAlpha] = bool(mDenoiser.params.denoiseAlpha > 0);
-
-    return props;
-}
-
-RenderPassReflection OptixDenoiser_::reflect(const CompileData& compileData)
-{
-    // Define the required resources here
-    RenderPassReflection r;
-    r.addInput(kColorInput, "Color input");
-    r.addInput(kAlbedoInput, "Albedo input").flags(RenderPassReflection::Field::Flags::Optional);
-    r.addInput(kNormalInput, "Normal input").flags(RenderPassReflection::Field::Flags::Optional);
-    r.addInput(kMotionInput, "Motion vector input").flags(RenderPassReflection::Field::Flags::Optional);
-    r.addOutput(kOutput, "Denoised output").format(ResourceFormat::RGBA32Float);
-    return r;
-}
-
-void OptixDenoiser_::setScene(RenderContext* pRenderContext, const ref<Scene>& pScene)
-{
-    mpScene = pScene;
-}
 
 void OptixDenoiser_::compile(RenderContext* pRenderContext, const CompileData& compileData)
 {

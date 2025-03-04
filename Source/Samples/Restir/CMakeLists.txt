@@ -1,10 +1,13 @@
 add_falcor_executable(Restir)
 
 target_sources(Restir PRIVATE
+
+    CudaUtils.h
+    CudaRuntime.h
 	DenoisingPass.h
     GBuffer.h
     LightManager.h
-    OptixDenoiser.h
+    YannOptixDenoiser.h
     OptixUtils.h
     ReservoirManager.h
     RestirApp.h
@@ -16,11 +19,12 @@ target_sources(Restir PRIVATE
     TemporalFilteringPass.h    
     VisibilityPass.h
 
+    CudaUtils.cpp
 	DenoisingPass.cpp
     FloatRandomNumberGenerator.h
     GBuffer.cpp
     LightManager.cpp
-    OptixDenoiser.cpp
+    YannOptixDenoiser.cpp
     OptixUtils.cpp
     ReservoirManager.cpp
 	RestirApp.cpp
@@ -29,10 +33,10 @@ target_sources(Restir PRIVATE
 	TemporalFilteringPass.cpp
 	VisibilityPass.cpp
 
-    ConvertBufToTex.ps.slang
-    ConvertMotionVectorInputs.cs.slang
-    ConvertNormalsToBuf.cs.slang
-    ConvertTexToBuf.cs.slang
+    ConvertBufToTex.slang
+    ConvertMotionVectorInputs.slang
+    ConvertNormalsToBuf.slang
+    ConvertTexToBuf.slang
 
     DenoisingPass_PackNRD.slang
     DenoisingPass_UnpackNRD.slang

@@ -75,28 +75,23 @@
 
 using namespace Falcor;
 
-// Note: The trailing underscore is to avoid clashing with the OptixDenoiser type in optix.h
-class OptixDenoiser_ : public RenderPass
+namespace Restir
+{
+class YannOptixDenoiser
 {
 public:
-    FALCOR_PLUGIN_CLASS(OptixDenoiser_, "OptixDenoiser", "Apply the OptiX AI Denoiser.");
+    YannOptixDenoiser(
+        Falcor::ref<Falcor::Device> pDevice,
+        Falcor::ref<Falcor::Scene> pScene,
+        uint32_t width,
+        uint32_t height
+    );
 
-    static ref<OptixDenoiser_> create(ref<Device> pDevice, const Properties& props) { return make_ref<OptixDenoiser_>(pDevice, props); }
-
-    OptixDenoiser_(ref<Device> pDevice, const Properties& props);
-
-    virtual Properties getProperties() const override;
-    virtual RenderPassReflection reflect(const CompileData& compileData) override;
-    virtual void compile(RenderContext* pRenderContext, const CompileData& compileData) override;
-    virtual void execute(RenderContext* pRenderContext, const RenderData& renderData) override;
-    virtual void renderUI(Gui::Widgets& widget) override;
-    virtual void setScene(RenderContext* pRenderContext, const ref<Scene>& pScene) override;
-
-    // Scripting functions
-    bool getEnabled() const { return mEnabled; }
-    void setEnabled(bool enabled) { mEnabled = enabled; }
+    void compile(RenderContext* pRenderContext);
+    void execute(RenderContext* pRenderContext);
 
 private:
+    ref<Device> mpDevice;
     ref<Scene> mpScene;
 
     /**
@@ -124,25 +119,8 @@ private:
     void convertMotionVectors(RenderContext* pRenderContext, const ref<Texture>& tex, const ref<Buffer>& buf, const uint2& size);
 
     // Options and parameters for the Falcor render pass
-
-    /// True = using OptiX denoiser, False = pass is a no-op
-    bool mEnabled = true;
-    /// Will select best mode automatically (changed to false if the mode is set by Python)
-    bool mSelectBestMode = true;
-    /// True on the first frame after (re-)creating a denoiser
-    bool mIsFirstFrame = true;
-    /// Do we have a color input?
-    bool mHasColorInput = true;
-    /// Do we have an albedo guide image for denoising?
-    bool mHasAlbedoInput = false;
-    /// Do we have a normal guide image for denoising?
-    bool mHasNormalInput = false;
-    /// Do we have input motion vectors for temporal denoising?
-    bool mHasMotionInput = false;
-    /// Current window / render size
-    uint2 mBufferSize = uint2(0, 0);
-    /// Do we need to (re-)initialize the denoiser before invoking it?
-    bool mRecreateDenoiser = true;
+    uint32_t mWidth;
+    uint32_t mHeight;
 
     // GUI helpers for choosing between different OptiX AI denoiser modes
 
@@ -234,3 +212,4 @@ private:
      */
     void* exportBufferToCudaDevice(ref<Buffer>& buf);
 };
+} // namespace Restir
